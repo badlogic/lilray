@@ -51,8 +51,16 @@ namespace lilray {
         void rotate(float degrees);
     };
 
+    struct Sprite {
+        float x, y, height;
+        Image *image;
+        float distance;
+
+        Sprite(float x, float y, float height, Image *image): x(x), y(y), height(height), image(image) {}
+    };
+
     void
-    render(Image &frame, Camera &camera, Map &map, Image *walls[], Image *floor, Image *ceiling, float lightDistance);
+    render(Image &frame, float zbuffer[], Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, Image *walls[], Image *floor, Image *ceiling, float lightDistance);
 
     void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels);
 }

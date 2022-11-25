@@ -10,6 +10,11 @@
 using namespace lilray;
 
 #define DEG_TO_RAD (3.14159265359f / 180.f)
+#define RAD_TO_DEG (180.f / 3.14159265359f)
+
+static inline float _sign(float v) {
+    return v < 0 ? -1.0f : 1.0f;
+}
 
 struct argb_pixel {
     uint8_t b;
@@ -24,6 +29,18 @@ static inline void _darken(const uint32_t *src, uint32_t *dst, uint32_t lightnes
     dstPixel->r = (srcPixel->r * lightness) >> 8;
     dstPixel->g = (srcPixel->g * lightness) >> 8;
     dstPixel->b = (srcPixel->b * lightness) >> 8;
+}
+
+static inline float _distance(float x1, float y1, float x2, float y2) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    return sqrtf(dx * dx + dy * dy);
+}
+
+static int _spriteCompare(const void *a, const void *b) {
+    Sprite *spriteA = *(Sprite **)a;
+    Sprite *spriteB = *(Sprite **)b;
+    return _sign(spriteB->distance - spriteA->distance);
 }
 
 Image::Image(const char *file) {
@@ -178,14 +195,10 @@ int32_t Map::raycast(float rayX, float rayY, float rayDirX, float rayDirY, float
 Camera::Camera(float x, float y, float angle, float fieldOfView) : x(x), y(y), angle(angle), fieldOfView(fieldOfView) {
 }
 
-float sign(float v) {
-    return v < 0 ? -1.0f : 1.0f;
-}
-
 void Camera::move(Map &map, float distance) {
     float maxDistance = sqrtf(float(map.width * map.width) + float(map.height * map.height));
-    float rayDirX = sign(distance) * cosf(angle * DEG_TO_RAD);
-    float rayDirY = sign(distance) * sinf(angle * DEG_TO_RAD);
+    float rayDirX = _sign(distance) * cosf(angle * DEG_TO_RAD);
+    float rayDirY = _sign(distance) * sinf(angle * DEG_TO_RAD);
     if (map.getCell(x + rayDirX * 0.1f, y) <= 0) x += rayDirX * fabs(fmin(0.1f, distance));
     if (map.getCell(x, y + rayDirY * 0.1f) <= 0) y += rayDirY * fabs(fmin(0.1f, distance));
 }
@@ -207,7 +220,8 @@ void lilray::argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
     }
 }
 
-void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Image *floor, Image *ceiling,
+void lilray::render(Image &frame, float zbuffer[], Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, Image *walls[],
+                    Image *floor, Image *ceiling,
                     float lightDistance) {
     const float frameHalfHeight = float(frame.height) / 2.0f;
     const float maxDistance = sqrtf(float(map.width * map.width) + float(map.height * map.height));
@@ -222,7 +236,7 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         const float rayDirYLeft = camDirY + -halfWidth * rightY;
         const float rayDirXRight = camDirX + halfWidth * rightX;
         const float rayDirYRight = camDirY + halfWidth * rightY;
-        const float posZ = 0.5f * frame.height;
+        const float posZ = frame.height * 0.5f;
         const float floorScaleX = (rayDirXRight - rayDirXLeft) / frame.width;
         const float floorScaleY = (rayDirYRight - rayDirYLeft) / frame.width;
         const int32_t floorWidth = floor->width;
@@ -284,5 +298,29 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         frame.drawVerticalTextureSlice(x, int32_t(frameHalfHeight - cellHeight),
                                        int32_t(frameHalfHeight + cellHeight),
                                        *texture, textureX, modulate);
+        zbuffer[x] = distance;
+    }
+
+    for (int i = 0; i < numSprites; i++) {
+        Sprite *sprite = sprites[i];
+        sprite->distance = _distance(sprite->x, sprite->y, camera.x, camera.y);
+    }
+    qsort(sprites, numSprites, sizeof(Sprite *), &_spriteCompare);
+    for (int i = 0; i < numSprites; i++) {
+        Sprite *sprite = sprites[i];
+        float viewDirX = sprite->x - camera.x;
+        float viewDirY = sprite->y - camera.y;
+        if (viewDirX * camDirX + viewDirY * camDirY < 0)
+            continue;
+        float viewAngle = atan2f(viewDirY, viewDirX) * RAD_TO_DEG - camera.angle;
+        float viewX = tan(viewAngle * DEG_TO_RAD) / halfWidth * frame.width / 2 + frame.width / 2;
+        float distance = sprite->distance * cosf(viewAngle * DEG_TO_RAD);
+        float unitViewHeight = frameHalfHeight / distance;
+        float yEnd = frameHalfHeight + unitViewHeight;
+
+        if (viewX > 0 && viewX < frame.width) {
+            if (zbuffer[int32_t(viewX)] < distance) continue;
+            frame.drawVerticalLine(viewX, yEnd - unitViewHeight * sprite->height * 2, yEnd, 0xffff0000);
+        }
     }
 }
