@@ -3,35 +3,24 @@
 
 #include <cstdint>
 
-#define LILRAY_ARGB(r, g, b, a) (uint32_t)(((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff))
-
 namespace lilray {
-    struct Texture {
+    struct Image {
         int32_t width, height;
         uint32_t *pixels;
 
-        Texture(const char* file);
-        Texture(int32_t width, int32_t height, uint32_t *pixels);
-        Texture(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t numColors);
-        ~Texture();
+        explicit Image(const char *file);
 
-        uint32_t getTexel(int32_t x, int32_t y);
-        Texture *getRegion(int32_t x, int32_t y, int32_t width, int32_t height);
-    };
+        Image(int32_t width, int32_t height, const uint32_t *pixels = nullptr);
 
-    struct Frame {
-        int32_t width, height;
-        uint32_t *pixels;
+        ~Image();
 
-        Frame(int32_t width, int32_t height);
-
-        ~Frame();
+        Image *getRegion(int32_t x, int32_t y, int32_t w, int32_t h);
 
         void clear(uint32_t clearColor);
 
         void drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color);
 
-        void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Texture &texture, int32_t u);
+        void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX, float modulate);
     };
 
     struct Map {
@@ -45,6 +34,8 @@ namespace lilray {
         void setCell(int32_t x, int32_t y, int32_t value);
 
         int32_t getCell(int32_t x, int32_t y);
+
+        int32_t raycast(float rayX, float rayY, float rayDirX, float rayDirY, float maxDistance, float &hitX, float &hitY, float &distance);
     };
 
     struct Camera {
@@ -52,14 +43,14 @@ namespace lilray {
 
         Camera(float x, float y, float angle, float fieldOfView);
 
-        void move(float distance);
+        void move(Map &map, float distance);
 
         void rotate(float degrees);
     };
 
-    void render(Frame &frame, Camera &camera, Map &map, Texture *textures[]);
+    void render(Image &frame, Camera &camera, Map &map, Image *textures[]);
 
-    void argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels);
+    void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels);
 }
 
 #endif

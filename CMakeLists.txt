@@ -10,6 +10,9 @@ include(FetchContent)
 FetchContent_Declare(minifb GIT_REPOSITORY https://github.com/emoon/minifb)
 FetchContent_MakeAvailable(minifb)
 
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=undefined")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined")
+
 include_directories(src)
 add_executable(lilray "src/lilray.cpp" "src/main.cpp")
 target_link_libraries(lilray LINK_PUBLIC minifb)

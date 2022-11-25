@@ -3,76 +3,47 @@
 
 using namespace lilray;
 
-lilray_texture lilray_texture_create(int32_t width, int32_t height, uint32_t *pixels) {
-    return (lilray_texture) new Texture(width, height, pixels);
+lilray_image lilray_image_create(int32_t width, int32_t height, uint32_t *pixels) {
+    return (lilray_image) new Image(width, height, pixels);
 }
 
-lilray_texture lilray_texture_create_image(const char *file) {
-    return (lilray_texture) new Texture(file);
+lilray_image lilray_image_create_from_file(const char *file) {
+    return (lilray_image) new Image(file);
 }
 
-lilray_texture
-lilray_texture_create_palette(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors) {
-    return (lilray_texture) new Texture(width, height, pixels, palette, num_colors);
-}
-
-void lilray_texture_dispose(lilray_texture texture) {
+void lilray_image_dispose(lilray_image texture) {
     if (!texture) return;
     delete texture;
 }
 
-int32_t lilray_texture_get_width(lilray_texture texture) {
+int32_t lilray_image_get_width(lilray_image texture) {
     if (!texture) return 0;
-    return ((Texture *) texture)->width;
+    return ((Image *) texture)->width;
 }
 
-int32_t lilray_texture_get_height(lilray_texture texture) {
+int32_t lilray_image_get_height(lilray_image texture) {
     if (!texture) return 0;
-    return ((Texture *) texture)->height;
+    return ((Image *) texture)->height;
 }
 
-uint32_t *lilray_texture_get_pixels(lilray_texture texture) {
+uint32_t *lilray_image_get_pixels(lilray_image texture) {
     if (!texture) return nullptr;
-    return ((Texture *) texture)->pixels;
+    return ((Image *) texture)->pixels;
 }
 
-lilray_texture lilray_texture_get_region(lilray_texture texture, int32_t x, int32_t y, int32_t width, int32_t height) {
+lilray_image lilray_image_get_region(lilray_image texture, int32_t x, int32_t y, int32_t width, int32_t height) {
     if (!texture) return nullptr;
-    return (lilray_texture)((Texture *) texture)->getRegion(x, y, width, height);
+    return (lilray_image) ((Image *) texture)->getRegion(x, y, width, height);
 }
 
-lilray_frame lilray_frame_create(int32_t width, int32_t height) {
-    return (lilray_frame) new Frame(width, height);
+void lilray_image_clear(lilray_image image, uint32_t argb_color) {
+    if (!image) return;
+    ((Image *) image)->clear(argb_color);
 }
 
-void lilray_frame_dispose(lilray_frame frame) {
-    if (!frame) return;
-    delete (Frame *) frame;
-}
-
-int32_t lilray_frame_get_width(lilray_frame frame) {
-    if (!frame) return 0;
-    return ((Frame *) frame)->width;
-}
-
-int32_t lilray_frame_get_height(lilray_frame frame) {
-    if (!frame) return 0;
-    return ((Frame *) frame)->height;
-}
-
-uint32_t *lilray_frame_get_pixels(lilray_frame frame) {
-    if (!frame) return nullptr;
-    return ((Frame *) frame)->pixels;
-}
-
-void lilray_frame_clear(lilray_frame frame, uint32_t argb_color) {
-    if (!frame) return;
-    ((Frame *) frame)->clear(argb_color);
-}
-
-void lilray_draw_vertical_line(lilray_frame frame, int32_t x, int32_t y_start, int32_t y_end, uint32_t argb_color) {
-    if (!frame) return;
-    ((Frame *) frame)->drawVerticalLine(x, y_start, y_end, argb_color);
+void lilray_image_draw_vertical_line(lilray_image image, int32_t x, int32_t y_start, int32_t y_end, uint32_t argb_color) {
+    if (!image) return;
+    ((Image *) image)->drawVerticalLine(x, y_start, y_end, argb_color);
 }
 
 lilray_map lilray_map_create(int32_t width, int32_t height, int32_t *cells) {
@@ -157,9 +128,9 @@ void lilray_camera_set_field_of_view(lilray_camera camera, float fieldOfView) {
     ((Camera *) camera)->fieldOfView = fieldOfView;
 }
 
-void lilray_camera_move(lilray_camera camera, float distance) {
+void lilray_camera_move(lilray_camera camera, lilray_map map, float distance) {
     if (!camera) return;
-    ((Camera *) camera)->move(distance);
+    ((Camera *) camera)->move(*(Map *) map, distance);
 }
 
 void lilray_camera_rotate(lilray_camera camera, float degrees) {
@@ -167,13 +138,13 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture *textures) {
+void lilray_render(lilray_image frame, lilray_camera camera, lilray_map map, lilray_image *textures) {
     if (!frame) return;
     if (!camera) return;
     if (!map) return;
-    render(*(Frame *) frame, *(Camera *) camera, *(Map *) map, (Texture **) textures);
+    render(*(Image *) frame, *(Camera *) camera, *(Map *) map, (Image **) textures);
 }
 
-void lilray_argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels) {
+void lilray_argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
     lilray::argb_to_rgba(argb, rgba, numPixels);
 }
