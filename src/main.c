@@ -9,11 +9,14 @@ int main(int argc, char **argv) {
 
     lilray_image image = lilray_image_create_from_file("./wolftextures.png");
     lilray_image textures[] = {
-            lilray_image_get_region(image, 0, 0, 64, 64),
             lilray_image_get_region(image, 64, 0, 64, 64),
             lilray_image_get_region(image, 128, 0, 64, 64),
             lilray_image_get_region(image, 192, 0, 64, 64),
-            lilray_image_get_region(image, 256, 0, 64, 64)
+            lilray_image_get_region(image, 256, 0, 64, 64),
+            lilray_image_get_region(image, 320, 0, 64, 64),
+            lilray_image_get_region(image, 384, 0, 64, 64),
+            lilray_image_get_region(image, 448, 0, 64, 64),
+            lilray_image_get_region(image, 0, 0, 64, 64),
     };
     lilray_image frame = lilray_image_create(frameWidth, frameHeight, NULL);
     int32_t cells[] = {
@@ -44,7 +47,7 @@ int main(int argc, char **argv) {
     float rotationSpeed = 90;
     float movementSpeed = 2;
 
-    struct mfb_window *window = mfb_open_ex("lilray", frameWidth * 4, frameHeight * 4, WF_RESIZABLE);
+    struct mfb_window *window = mfb_open_ex("lilray", frameWidth * 2, frameHeight * 2, WF_RESIZABLE);
     if (!window) return 0;
     struct mfb_timer *deltaTimer = mfb_timer_create();
     do {
@@ -55,7 +58,7 @@ int main(int argc, char **argv) {
         if (mfb_get_key_buffer(window)[KB_KEY_S]) lilray_camera_move(camera, map, -movementSpeed * delta);
 
         lilray_image_clear(frame, 0);
-        lilray_render(frame, camera, map, textures);
+        lilray_render(frame, camera, map, textures, textures[6], textures[5], 8);
         if (mfb_update_ex(window, lilray_image_get_pixels(frame), frameWidth, frameHeight) < 0) break;
     } while (-1);
 }

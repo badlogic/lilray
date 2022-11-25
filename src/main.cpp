@@ -14,6 +14,9 @@ int main(int argc, char **argv) {
             image.getRegion(128, 0, 64, 64),
             image.getRegion(192, 0, 64, 64),
             image.getRegion(256, 0, 64, 64),
+            image.getRegion(320, 0, 64, 64),
+            image.getRegion(384, 0, 64, 64),
+            image.getRegion(448, 0, 64, 64),
             image.getRegion(0, 0, 64, 64),
     };
     Image frame(resX, resY);
@@ -45,7 +48,7 @@ int main(int argc, char **argv) {
     float rotationSpeed = 90;
     float movementSpeed = 2;
 
-    mfb_window *window = mfb_open_ex("lilray", resX * 4, resY * 4, WF_RESIZABLE);
+    mfb_window *window = mfb_open_ex("lilray", resX * 2, resY * 2, WF_RESIZABLE);
     if (!window) return 0;
     mfb_timer *deltaTimer = mfb_timer_create();
     mfb_timer *frameTimer = mfb_timer_create();
@@ -57,8 +60,9 @@ int main(int argc, char **argv) {
         if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(map, -movementSpeed * delta);
 
         double start = mfb_timer_now(frameTimer);
-        frame.clear(0);
-        render(frame, camera, map, textures);
+        // frame.clear(0);
+        render(frame, camera, map, textures, textures[6], textures[5], 6);
+        // render(frame, camera, map, textures, nullptr, nullptr, 6);
         printf("frame time: %f, pos: %f, %f\n", mfb_timer_now(frameTimer) - start, camera.x, camera.y);
         if (mfb_update_ex(window, frame.pixels, resX, resY) < 0) break;
     } while (true);

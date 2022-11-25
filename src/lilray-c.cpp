@@ -41,7 +41,8 @@ void lilray_image_clear(lilray_image image, uint32_t argb_color) {
     ((Image *) image)->clear(argb_color);
 }
 
-void lilray_image_draw_vertical_line(lilray_image image, int32_t x, int32_t y_start, int32_t y_end, uint32_t argb_color) {
+void
+lilray_image_draw_vertical_line(lilray_image image, int32_t x, int32_t y_start, int32_t y_end, uint32_t argb_color) {
     if (!image) return;
     ((Image *) image)->drawVerticalLine(x, y_start, y_end, argb_color);
 }
@@ -138,11 +139,13 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-void lilray_render(lilray_image frame, lilray_camera camera, lilray_map map, lilray_image *textures) {
+void lilray_render(lilray_image frame, lilray_camera camera, lilray_map map, lilray_image *walls, lilray_image floor,
+                   lilray_image ceiling, float lightDistance) {
     if (!frame) return;
     if (!camera) return;
     if (!map) return;
-    render(*(Image *) frame, *(Camera *) camera, *(Map *) map, (Image **) textures);
+    render(*(Image *) frame, *(Camera *) camera, *(Map *) map, (Image **) walls, (Image *) floor, (Image *) ceiling,
+           lightDistance);
 }
 
 void lilray_argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {

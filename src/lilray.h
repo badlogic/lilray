@@ -20,7 +20,8 @@ namespace lilray {
 
         void drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color);
 
-        void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX, float modulate);
+        void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
+                                      float modulate);
     };
 
     struct Map {
@@ -35,7 +36,9 @@ namespace lilray {
 
         int32_t getCell(int32_t x, int32_t y);
 
-        int32_t raycast(float rayX, float rayY, float rayDirX, float rayDirY, float maxDistance, float &hitX, float &hitY, float &distance);
+        int32_t
+        raycast(float rayX, float rayY, float rayDirX, float rayDirY, float maxDistance, float &hitX, float &hitY,
+                float &distance);
     };
 
     struct Camera {
@@ -48,7 +51,8 @@ namespace lilray {
         void rotate(float degrees);
     };
 
-    void render(Image &frame, Camera &camera, Map &map, Image *textures[]);
+    void
+    render(Image &frame, Camera &camera, Map &map, Image *walls[], Image *floor, Image *ceiling, float lightDistance);
 
     void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels);
 }
