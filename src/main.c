@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     float rotationSpeed = 90;
     float movementSpeed = 2;
 
-    struct mfb_window *window = mfb_open_ex("lilray", frameWidth * 2, frameHeight * 2, WF_RESIZABLE);
+    struct mfb_window *window = mfb_open_ex("lilray", frameWidth * 4, frameHeight * 4, WF_RESIZABLE);
     if (!window) return 0;
     struct mfb_timer *deltaTimer = mfb_timer_create();
     do {

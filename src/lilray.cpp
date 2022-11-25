@@ -209,7 +209,7 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *textures[]) {
         float cellHeight = frameHalfHeight / distance;
         Image *texture = textures[cell - 1];
         int32_t textureX = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
-        float modulate = fmin(0.7f, distance / (maxDistance / 5));
+        float modulate = fmin(0.9f, powf(distance / 8, 0.6));
         frame.drawVerticalTextureSlice(x, int32_t(frameHalfHeight - cellHeight), int32_t(frameHalfHeight + cellHeight),
                                        *texture, textureX, 1 - modulate);
     }

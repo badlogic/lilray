@@ -5,16 +5,16 @@
 using namespace lilray;
 
 int main(int argc, char **argv) {
-    int resX = 1600;
-    int resY = 1200;
+    int resX = 320;
+    int resY = 240;
 
     Image image("./wolftextures.png");
     Image *textures[] = {
-            image.getRegion(0, 0, 64, 64),
             image.getRegion(64, 0, 64, 64),
             image.getRegion(128, 0, 64, 64),
             image.getRegion(192, 0, 64, 64),
-            image.getRegion(256, 0, 64, 64)
+            image.getRegion(256, 0, 64, 64),
+            image.getRegion(0, 0, 64, 64),
     };
     Image frame(resX, resY);
     int32_t cells[] = {
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
     float rotationSpeed = 90;
     float movementSpeed = 2;
 
-    mfb_window *window = mfb_open_ex("lilray", resX, resY, WF_RESIZABLE);
+    mfb_window *window = mfb_open_ex("lilray", resX * 4, resY * 4, WF_RESIZABLE);
     if (!window) return 0;
     mfb_timer *deltaTimer = mfb_timer_create();
     mfb_timer *frameTimer = mfb_timer_create();
