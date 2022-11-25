@@ -5,6 +5,22 @@
 using namespace lilray;
 
 int main(int argc, char **argv) {
+    uint8_t pixels[] = {
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 1, 0, 0, 0, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 1, 0, 0, 0, 1, 0, 0,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 0, 0, 1, 0, 0, 0, 1,
+        1, 1, 1, 1, 1, 1, 1, 1,
+        0, 1, 0, 0, 0, 1, 0, 0,
+    };
+    uint32_t palette[] = {
+            LILRAY_ARGB(194, 195, 199, 255),
+            LILRAY_ARGB(255, 0, 0, 255),
+    };
+    Texture texture(8, 8, pixels, palette, 2);
+
     Frame frame(800, 600);
     int32_t cells[] = {
             1, 1, 1, 1, 1,
@@ -26,7 +42,7 @@ int main(int argc, char **argv) {
         if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(-0.5 / 60);
 
         frame.clear(0);
-        render(frame, camera, map);
+        render(frame, camera, map, texture);
         if (mfb_update_ex(window, frame.pixels, 800, 600) < 0) break;
     } while (mfb_wait_sync(window));
 }

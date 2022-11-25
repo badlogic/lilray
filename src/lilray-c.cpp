@@ -3,6 +3,41 @@
 
 using namespace lilray;
 
+lilray_texture
+lilray_texture_create(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors) {
+    return (lilray_texture) new Texture(width, height, pixels, palette, num_colors);
+}
+
+void lilray_texture_dispose(lilray_texture texture) {
+    if (!texture) return;
+    delete texture;
+}
+
+int32_t lilray_texture_get_width(lilray_texture texture) {
+    if (!texture) return 0;
+    return ((Texture *) texture)->width;
+}
+
+int32_t lilray_texture_get_height(lilray_texture texture) {
+    if (!texture) return 0;
+    return ((Texture *) texture)->height;
+}
+
+uint8_t *lilray_texture_get_pixels(lilray_texture texture) {
+    if (!texture) return nullptr;
+    return ((Texture *) texture)->pixels;
+}
+
+uint32_t *lilray_texture_get_palette(lilray_texture texture) {
+    if (!texture) return nullptr;
+    return ((Texture *) texture)->palette;
+}
+
+int32_t lilray_texture_get_num_colors(lilray_texture texture) {
+    if (!texture) return 0;
+    return ((Texture *) texture)->numColors;
+}
+
 lilray_frame lilray_frame_create(int32_t width, int32_t height) {
     return (lilray_frame) new Frame(width, height);
 }
@@ -129,9 +164,9 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map) {
+void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture texture) {
     if (!frame) return;
     if (!camera) return;
     if (!map) return;
-    render(*(Frame *) frame, *(Camera *) camera, *(Map *) map);
+    render(*(Frame *) frame, *(Camera *) camera, *(Map *) map, *(Texture *) texture);
 }
