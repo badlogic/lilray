@@ -17,15 +17,18 @@ int main(int argc, char **argv) {
     };
     Map map(5, 5, cells);
     Camera camera(2, 2, 0, 66);
+    float rotationSpeed = 90;
+    float movementSpeed = 2;
 
     mfb_window *window = mfb_open_ex("lilray", 800, 600, WF_RESIZABLE);
     if (!window) return 0;
-
+    struct mfb_timer *timer = mfb_timer_create();
     do {
-        if (mfb_get_key_buffer(window)[KB_KEY_A]) camera.rotate(-45.f / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_D]) camera.rotate(45.f / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_W]) camera.move(1.f / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(-1.f / 60);
+        float delta = mfb_timer_delta(timer);
+        if (mfb_get_key_buffer(window)[KB_KEY_A]) camera.rotate(-rotationSpeed * delta);
+        if (mfb_get_key_buffer(window)[KB_KEY_D]) camera.rotate(rotationSpeed * delta);
+        if (mfb_get_key_buffer(window)[KB_KEY_W]) camera.move(movementSpeed * delta);
+        if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(-movementSpeed * delta);
 
         frame.clear(0);
         render(frame, camera, map, *texture);
