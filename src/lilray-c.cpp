@@ -36,6 +36,11 @@ uint32_t *lilray_texture_get_pixels(lilray_texture texture) {
     return ((Texture *) texture)->pixels;
 }
 
+lilray_texture lilray_texture_get_region(lilray_texture texture, int32_t x, int32_t y, int32_t width, int32_t height) {
+    if (!texture) return nullptr;
+    return (lilray_texture)((Texture *) texture)->getRegion(x, y, width, height);
+}
+
 lilray_frame lilray_frame_create(int32_t width, int32_t height) {
     return (lilray_frame) new Frame(width, height);
 }

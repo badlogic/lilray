@@ -6,7 +6,8 @@ int main(int argc, char **argv) {
     int32_t bufferWidth = 320;
     int32_t bufferHeight = 240;
 
-    lilray_texture texture = lilray_texture_create_image("./brick.png");
+    lilray_texture textures = lilray_texture_create_image("./wolftextures.png");
+    lilray_texture texture = lilray_texture_get_region(textures, 0, 0, 64, 64);
     lilray_frame frame = lilray_frame_create(bufferWidth, bufferHeight);
     int32_t cells[] = {
             1, 1, 1, 1, 1,

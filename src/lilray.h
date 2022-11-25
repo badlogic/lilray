@@ -16,6 +16,7 @@ namespace lilray {
         ~Texture();
 
         uint32_t getTexel(int32_t x, int32_t y);
+        Texture *getRegion(int32_t x, int32_t y, int32_t width, int32_t height);
     };
 
     struct Frame {

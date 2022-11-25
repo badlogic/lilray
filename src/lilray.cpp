@@ -15,10 +15,10 @@ Texture::Texture(const char* file) {
     argb_to_rgba((uint8_t*)pixels, (uint8_t*)pixels, width * height);
 }
 
-Texture::Texture(int32_t width, int32_t height, uint32_t *pixels) : width(width),
+Texture::Texture(int32_t width, int32_t height, uint32_t *pixels = nullptr) : width(width),
                                                                     height(height) {
     this->pixels = (uint32_t *) malloc(sizeof(uint32_t) * width * height);
-    memcpy(this->pixels, pixels, sizeof(uint32_t) * width * height);
+    if (pixels) memcpy(this->pixels, pixels, sizeof(uint32_t) * width * height);
 }
 
 Texture::Texture(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t numColors) : width(width),
@@ -37,6 +37,15 @@ uint32_t Texture::getTexel(int32_t x, int32_t y) {
     if (x < 0 || x >= width) return 0;
     if (y < 0 || y >= height) return 0;
     return pixels[x + y * width];
+}
+
+Texture *Texture::getRegion(int32_t x, int32_t y, int32_t w, int32_t h) {
+    Texture *region = new Texture(w, h);
+    uint32_t *dst = region->pixels;
+    int yEnd = y + height;
+    for (;y < yEnd; y++, dst += w) {
+        memcpy(dst, pixels + x + y * this->width, sizeof(uint32_t) * w);}
+    return region;
 }
 
 Frame::Frame(int32_t width, int32_t height) : width(width), height(height) {

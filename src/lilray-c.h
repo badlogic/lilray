@@ -43,6 +43,7 @@ FFI_EXPORT void lilray_texture_dispose(lilray_texture texture);
 FFI_EXPORT int32_t lilray_texture_get_width(lilray_texture texture);
 FFI_EXPORT int32_t lilray_texture_get_height(lilray_texture texture);
 FFI_EXPORT uint32_t *lilray_texture_get_pixels(lilray_texture texture);
+FFI_EXPORT lilray_texture lilray_texture_get_region(lilray_texture texture, int32_t x, int32_t y, int32_t width, int32_t height);
 
 FFI_OPAQUE_TYPE(lilray_frame)
 FFI_EXPORT lilray_frame lilray_frame_create(int32_t width, int32_t height);
