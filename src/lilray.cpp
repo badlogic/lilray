@@ -138,12 +138,21 @@ void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
     float rayAngleStep = camera.fieldOfView / frame.width;
     int32_t frameHalfHeight = frame.height / 2;
     float maxDistance = sqrtf(map.width * map.width + map.height * map.height) * 10;
+    float camDirX = cosf(camera.angle * DEG_TO_RAD);
+    float camDirY = sinf(camera.angle * DEG_TO_RAD);
+    float rightX = -camDirY;
+    float rightY = camDirX;
+    float halfWidth = tanf(camera.fieldOfView / 2 * DEG_TO_RAD);
 
     for (int x = 0; x < frame.width; x++) {
         float rayX = camera.x;
         float rayY = camera.y;
-        float rayDirX = cosf(rayAngle * DEG_TO_RAD);
-        float rayDirY = sinf(rayAngle * DEG_TO_RAD);
+        float offset = ((x * 2.0 / (frame.width - 1.0)) - 1.0) * halfWidth;
+        float rayDirX = camDirX + offset * rightX;
+        float rayDirY = camDirY + offset * rightY;
+        float rayDirLen = sqrtf(rayDirX * rayDirX + rayDirY * rayDirY);
+        rayDirX /= rayDirLen;
+        rayDirY /= rayDirLen;
         float rayStepX = sqrtf(1 + (rayDirY / rayDirX) * (rayDirY / rayDirX));
         float rayStepY = sqrtf(1 + (rayDirX / rayDirY) * (rayDirX / rayDirY));
         int mapX = int(rayX), mapY = int(rayY);
@@ -191,7 +200,6 @@ void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
         int32_t u = int32_t((rayX + rayY) * texture.width) % texture.width;
         int32_t cellHeight = frameHalfHeight / distance;
         frame.drawVerticalTextureSlice(x, frameHalfHeight - cellHeight, frameHalfHeight + cellHeight, texture, u);
-        // frame.drawVerticalLine(x, frameHalfHeight - cellHeight, frameHalfHeight + cellHeight, 0xffff0000);
 
         rayAngle += rayAngleStep;
     }

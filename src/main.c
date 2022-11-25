@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
             1, 1, 1, 1, 1
     };
     lilray_map map = lilray_map_create(5, 5, cells);
-    lilray_camera camera = lilray_camera_create(2.5f, 2.5f, 0, 50);
+    lilray_camera camera = lilray_camera_create(2.5f, 2.5f, 0, 66);
 
     struct mfb_window *window = mfb_open_ex("lilray", bufferWidth * 2, bufferHeight * 2, WF_RESIZABLE);
     if (!window) return 0;

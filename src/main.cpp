@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
             1, 1, 1, 1, 1
     };
     Map map(5, 5, cells);
-    Camera camera(2, 2, 0, 60);
+    Camera camera(2, 2, 0, 66);
 
     mfb_window *window = mfb_open_ex("lilray", 800, 600, WF_RESIZABLE);
     if (!window) return 0;
