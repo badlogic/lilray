@@ -2,30 +2,41 @@
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using namespace lilray;
 
 #define DEG_TO_RAD (3.14159265359f / 180.f)
 
+Texture::Texture(const char* file) {
+    int n;
+    pixels = (uint32_t*)stbi_load(file, &width, &height, &n, 4);
+    argb_to_rgba((uint8_t*)pixels, (uint8_t*)pixels, width * height);
+}
+
+Texture::Texture(int32_t width, int32_t height, uint32_t *pixels) : width(width),
+                                                                    height(height) {
+    this->pixels = (uint32_t *) malloc(sizeof(uint32_t) * width * height);
+    memcpy(this->pixels, pixels, sizeof(uint32_t) * width * height);
+}
+
 Texture::Texture(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t numColors) : width(width),
-                                                                                                         height(height),
-                                                                                                         numColors(
-                                                                                                                 numColors) {
-    this->pixels = (uint8_t *) malloc(width * height);
-    memcpy(this->pixels, pixels, width * height);
-    this->palette = (uint32_t *) malloc(sizeof(uint32_t) * numColors);
-    memcpy(this->palette, palette, sizeof(uint32_t) * numColors);
+                                                                                                         height(height) {
+    this->pixels = (uint32_t *) malloc(sizeof(uint32_t) * width * height);
+    for (int i = 0, n = width * height; i < n; i++) {
+        this->pixels[i] = palette[pixels[i]];
+    }
 }
 
 Texture::~Texture() {
     delete pixels;
-    delete palette;
 }
 
 uint32_t Texture::getTexel(int32_t x, int32_t y) {
     if (x < 0 || x >= width) return 0;
     if (y < 0 || y >= height) return 0;
-    return palette[pixels[x + y * width]];
+    return pixels[x + y * width];
 }
 
 Frame::Frame(int32_t width, int32_t height) : width(width), height(height) {
@@ -125,7 +136,7 @@ void Camera::rotate(float degrees) {
 void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
     float rayAngle = camera.angle - camera.fieldOfView / 2;
     float rayAngleStep = camera.fieldOfView / frame.width;
-    float frameHalfHeight = frame.height / 2;
+    int32_t frameHalfHeight = frame.height / 2;
     float maxDistance = sqrtf(map.width * map.width + map.height * map.height) * 10;
 
     for (int x = 0; x < frame.width; x++) {
@@ -183,5 +194,19 @@ void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
         // frame.drawVerticalLine(x, frameHalfHeight - cellHeight, frameHalfHeight + cellHeight, 0xffff0000);
 
         rayAngle += rayAngleStep;
+    }
+}
+
+void lilray::argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels) {
+    numPixels <<= 2;
+    for (size_t i = 0; i < numPixels; i += 4) {
+        uint8_t b = argb[i];
+        uint8_t g = argb[i + 1];
+        uint8_t r = argb[i + 2];
+        uint8_t a = argb[i + 3];
+        rgba[i] = r;
+        rgba[i + 1] = g;
+        rgba[i + 2] = b;
+        rgba[i + 3] = a;
     }
 }

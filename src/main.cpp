@@ -5,22 +5,7 @@
 using namespace lilray;
 
 int main(int argc, char **argv) {
-    uint8_t pixels[] = {
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 1, 0, 0, 0, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 1, 0, 0, 0, 1, 0, 0,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 1, 0, 0, 0, 1,
-        1, 1, 1, 1, 1, 1, 1, 1,
-        0, 1, 0, 0, 0, 1, 0, 0,
-    };
-    uint32_t palette[] = {
-            LILRAY_ARGB(194, 195, 199, 255),
-            LILRAY_ARGB(255, 0, 0, 255),
-    };
-    Texture texture(8, 8, pixels, palette, 2);
-
+    Texture texture("./brick.png");
     Frame frame(800, 600);
     int32_t cells[] = {
             1, 1, 1, 1, 1,
@@ -36,10 +21,10 @@ int main(int argc, char **argv) {
     if (!window) return 0;
 
     do {
-        if (mfb_get_key_buffer(window)[KB_KEY_A]) camera.rotate(-60 / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_D]) camera.rotate(60 / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_W]) camera.move(0.5 / 60);
-        if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(-0.5 / 60);
+        if (mfb_get_key_buffer(window)[KB_KEY_A]) camera.rotate(-45.f / 60);
+        if (mfb_get_key_buffer(window)[KB_KEY_D]) camera.rotate(45.f / 60);
+        if (mfb_get_key_buffer(window)[KB_KEY_W]) camera.move(1.f / 60);
+        if (mfb_get_key_buffer(window)[KB_KEY_S]) camera.move(-1.f / 60);
 
         frame.clear(0);
         render(frame, camera, map, texture);

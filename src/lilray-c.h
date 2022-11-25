@@ -34,13 +34,15 @@
 
 FFI_OPAQUE_TYPE(lilray_texture)
 FFI_EXPORT lilray_texture
-lilray_texture_create(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors);
+lilray_texture_create(int32_t width, int32_t height, uint32_t *pixels);
+FFI_EXPORT lilray_texture
+lilray_texture_create_image(const char *file);
+FFI_EXPORT lilray_texture
+lilray_texture_create_palette(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors);
 FFI_EXPORT void lilray_texture_dispose(lilray_texture texture);
 FFI_EXPORT int32_t lilray_texture_get_width(lilray_texture texture);
 FFI_EXPORT int32_t lilray_texture_get_height(lilray_texture texture);
-FFI_EXPORT uint8_t *lilray_texture_get_pixels(lilray_texture texture);
-FFI_EXPORT uint32_t *lilray_texture_get_palette(lilray_texture texture);
-FFI_EXPORT int32_t lilray_texture_get_num_colors(lilray_texture texture);
+FFI_EXPORT uint32_t *lilray_texture_get_pixels(lilray_texture texture);
 
 FFI_OPAQUE_TYPE(lilray_frame)
 FFI_EXPORT lilray_frame lilray_frame_create(int32_t width, int32_t height);
@@ -76,4 +78,5 @@ FFI_EXPORT void lilray_camera_move(lilray_camera camera, float distance);
 FFI_EXPORT void lilray_camera_rotate(lilray_camera camera, float degrees);
 
 FFI_EXPORT void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture texture);
+FFI_EXPORT void lilray_argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels);
 #endif

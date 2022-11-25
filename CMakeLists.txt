@@ -40,3 +40,9 @@ target_link_libraries(lilray LINK_PUBLIC minifb)
 
 add_executable(lilray_c "src/lilray.cpp" "src/lilray-c.cpp"  "src/main.c")
 target_link_libraries(lilray_c LINK_PUBLIC minifb)
+
+add_custom_command(
+        TARGET lilray_c POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/assets/brick.png
+        ${CMAKE_CURRENT_BINARY_DIR}/brick.png)

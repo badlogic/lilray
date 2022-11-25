@@ -3,8 +3,16 @@
 
 using namespace lilray;
 
+lilray_texture lilray_texture_create(int32_t width, int32_t height, uint32_t *pixels) {
+    return (lilray_texture) new Texture(width, height, pixels);
+}
+
+lilray_texture lilray_texture_create_image(const char *file) {
+    return (lilray_texture) new Texture(file);
+}
+
 lilray_texture
-lilray_texture_create(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors) {
+lilray_texture_create_palette(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t num_colors) {
     return (lilray_texture) new Texture(width, height, pixels, palette, num_colors);
 }
 
@@ -23,19 +31,9 @@ int32_t lilray_texture_get_height(lilray_texture texture) {
     return ((Texture *) texture)->height;
 }
 
-uint8_t *lilray_texture_get_pixels(lilray_texture texture) {
+uint32_t *lilray_texture_get_pixels(lilray_texture texture) {
     if (!texture) return nullptr;
     return ((Texture *) texture)->pixels;
-}
-
-uint32_t *lilray_texture_get_palette(lilray_texture texture) {
-    if (!texture) return nullptr;
-    return ((Texture *) texture)->palette;
-}
-
-int32_t lilray_texture_get_num_colors(lilray_texture texture) {
-    if (!texture) return 0;
-    return ((Texture *) texture)->numColors;
 }
 
 lilray_frame lilray_frame_create(int32_t width, int32_t height) {
@@ -169,4 +167,8 @@ void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lil
     if (!camera) return;
     if (!map) return;
     render(*(Frame *) frame, *(Camera *) camera, *(Map *) map, *(Texture *) texture);
+}
+
+void lilray_argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels) {
+    lilray::argb_to_rgba(argb, rgba, numPixels);
 }

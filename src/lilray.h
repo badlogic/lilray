@@ -8,10 +8,10 @@
 namespace lilray {
     struct Texture {
         int32_t width, height;
-        uint8_t *pixels;
-        uint32_t *palette;
-        int32_t numColors;
+        uint32_t *pixels;
 
+        Texture(const char* file);
+        Texture(int32_t width, int32_t height, uint32_t *pixels);
         Texture(int32_t width, int32_t height, uint8_t *pixels, uint32_t *palette, int32_t numColors);
         ~Texture();
 
@@ -57,6 +57,8 @@ namespace lilray {
     };
 
     void render(Frame &frame, Camera &camera, Map &map, Texture &texture);
+
+    void argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels);
 }
 
 #endif
