@@ -234,15 +234,14 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         const int32_t ceilingHeight = ceiling->height;
         const int32_t ceilingHeightMinusOne = ceiling->height - 1;
 
-        for (int y = frame.height / 2; y <= frame.height; y++) {
-            int32_t p = y - frame.height * 0.5;
+        for (int y = frame.height / 2 + 1; y < frame.height; y++) {
+            int32_t p = y - (frame.height >> 1);
             float rowDistance = posZ / p;
             float floorStepX = rowDistance * floorScaleX;
             float floorStepY = rowDistance * floorScaleY;
             float floorX = camera.x + rowDistance * rayDirXLeft;
             float floorY = camera.y + rowDistance * rayDirYLeft;
-            uint32_t lightness = uint32_t((1 - rowDistance / lightDistance) * 255);
-
+            uint32_t lightness = uint32_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
             uint32_t *dstFloor = frame.pixels + y * frame.width;
             uint32_t *dstCeiling = frame.pixels + (frame.height - 1 - y) * frame.width;
             for (int x = 0; x < frame.width; x++, dstFloor++, dstCeiling++) {
@@ -281,7 +280,7 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         float cellHeight = frameHalfHeight / distance;
         Image *texture = walls[cell - 1];
         int32_t textureX = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
-        uint32_t modulate = uint32_t((1 - distance / lightDistance) * 255);
+        uint32_t modulate = uint32_t((1 - fmin(distance, lightDistance) / lightDistance) * 255);
         frame.drawVerticalTextureSlice(x, int32_t(frameHalfHeight - cellHeight),
                                        int32_t(frameHalfHeight + cellHeight),
                                        *texture, textureX, modulate);
