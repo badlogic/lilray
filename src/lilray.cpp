@@ -142,7 +142,7 @@ void Camera::rotate(float degrees) {
     angle += degrees;
 }
 
-void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
+void lilray::render(Frame &frame, Camera &camera, Map &map, Texture *textures[]) {
     float rayAngle = camera.angle - camera.fieldOfView / 2;
     float rayAngleStep = camera.fieldOfView / frame.width;
     int32_t frameHalfHeight = frame.height / 2;
@@ -206,9 +206,10 @@ void lilray::render(Frame &frame, Camera &camera, Map &map, Texture &texture) {
         rayX += rayDirX * distance;
         rayY += rayDirY * distance;
         distance = distance * cosf((rayAngle - camera.angle) * DEG_TO_RAD);
-        int32_t u = int32_t((rayX + rayY) * texture.width) % texture.width;
+        Texture *texture = textures[cell - 1];
+        int32_t u = int32_t((rayX + rayY) * texture->width) % texture->width;
         int32_t cellHeight = frameHalfHeight / distance;
-        frame.drawVerticalTextureSlice(x, frameHalfHeight - cellHeight, frameHalfHeight + cellHeight, texture, u);
+        frame.drawVerticalTextureSlice(x, frameHalfHeight - cellHeight, frameHalfHeight + cellHeight, *texture, u);
 
         rayAngle += rayAngleStep;
     }

@@ -167,11 +167,11 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture texture) {
+void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture *textures) {
     if (!frame) return;
     if (!camera) return;
     if (!map) return;
-    render(*(Frame *) frame, *(Camera *) camera, *(Map *) map, *(Texture *) texture);
+    render(*(Frame *) frame, *(Camera *) camera, *(Map *) map, (Texture **) textures);
 }
 
 void lilray_argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels) {

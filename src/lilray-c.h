@@ -78,6 +78,6 @@ FFI_EXPORT void lilray_camera_set_field_of_view(lilray_camera camera, float fiel
 FFI_EXPORT void lilray_camera_move(lilray_camera camera, float distance);
 FFI_EXPORT void lilray_camera_rotate(lilray_camera camera, float degrees);
 
-FFI_EXPORT void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture texture);
+FFI_EXPORT void lilray_render(lilray_frame frame, lilray_camera camera, lilray_map map, lilray_texture *textures);
 FFI_EXPORT void lilray_argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels);
 #endif

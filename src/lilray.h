@@ -57,7 +57,7 @@ namespace lilray {
         void rotate(float degrees);
     };
 
-    void render(Frame &frame, Camera &camera, Map &map, Texture &texture);
+    void render(Frame &frame, Camera &camera, Map &map, Texture *textures[]);
 
     void argb_to_rgba(uint8_t *argb, uint8_t *rgba, int32_t numPixels);
 }
