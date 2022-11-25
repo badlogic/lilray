@@ -11,12 +11,19 @@ using namespace lilray;
 
 #define DEG_TO_RAD (3.14159265359f / 180.f)
 
-static uint32_t _modulate(uint32_t color, float modulate) {
-    uint32_t ta = color & 0xff000000;
-    uint32_t tr = ((color >> 16) & 0xff) * modulate;
-    uint32_t tg = ((color >> 8) & 0xff) * modulate;
-    uint32_t tb = (color & 0xff) * modulate;
-    return ta | (tr << 16) | (tg << 8) | tb;
+struct argb_pixel {
+    uint8_t b;
+    uint8_t g;
+    uint8_t r;
+    uint8_t a;
+};
+
+static inline void _darken(const uint32_t *src, uint32_t *dst, uint32_t lightness) {
+    argb_pixel *srcPixel = (argb_pixel *) src;
+    argb_pixel *dstPixel = (argb_pixel *) dst;
+    dstPixel->r = (srcPixel->r * lightness) >> 8;
+    dstPixel->g = (srcPixel->g * lightness) >> 8;
+    dstPixel->b = (srcPixel->b * lightness) >> 8;
 }
 
 Image::Image(const char *file) {
@@ -75,7 +82,7 @@ void Image::drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t c
 }
 
 void Image::drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
-                                     float modulate) {
+                                     uint32_t lightness) {
     if (yEnd < yStart) {
         int32_t tmp = yEnd;
         yEnd = yStart;
@@ -92,13 +99,12 @@ void Image::drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Im
     if (yStart < 0) yStart = 0;
     if (yEnd >= height) yEnd = height - 1;
 
-    const uint32_t *texturePixels = texture.pixels;
+    const uint32_t *texturePixels = texture.pixels + textureX;
     const int32_t textureWidth = texture.width;
     uint32_t *framePixels = pixels + x + yStart * width;
     const int32_t frameWidth = width;
     for (int i = 0, n = yEnd - yStart + 1; i < n; i++) {
-        uint32_t texel = texturePixels[textureX + (int32_t(textureY) * textureWidth)];
-        *framePixels = _modulate(texel, modulate);
+        _darken(texturePixels + (uint32_t(textureY) * textureWidth), framePixels, lightness);
         textureY += textureStepY;
         framePixels += frameWidth;
     }
@@ -216,9 +222,17 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         const float rayDirYLeft = camDirY + -halfWidth * rightY;
         const float rayDirXRight = camDirX + halfWidth * rightX;
         const float rayDirYRight = camDirY + halfWidth * rightY;
-        float posZ = 0.5f * frame.height;
-        float floorScaleX = (rayDirXRight - rayDirXLeft) / frame.width;
-        float floorScaleY = (rayDirYRight - rayDirYLeft) / frame.width;
+        const float posZ = 0.5f * frame.height;
+        const float floorScaleX = (rayDirXRight - rayDirXLeft) / frame.width;
+        const float floorScaleY = (rayDirYRight - rayDirYLeft) / frame.width;
+        const int32_t floorWidth = floor->width;
+        const int32_t floorWidthMinusOne = floorWidth - 1;
+        const int32_t floorHeight = floor->height;
+        const int32_t floorHeightMinusOne = floor->height - 1;
+        const int32_t ceilingWidth = ceiling->width;
+        const int32_t ceilingWidthMinusOne = ceiling->width - 1;
+        const int32_t ceilingHeight = ceiling->height;
+        const int32_t ceilingHeightMinusOne = ceiling->height - 1;
 
         for (int y = frame.height / 2; y <= frame.height; y++) {
             int32_t p = y - frame.height * 0.5;
@@ -227,26 +241,25 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
             float floorStepY = rowDistance * floorScaleY;
             float floorX = camera.x + rowDistance * rayDirXLeft;
             float floorY = camera.y + rowDistance * rayDirYLeft;
-            float modulate = 1 - rowDistance / lightDistance;
-            const int32_t floorWidth = floor->width;
-            const int32_t floorHeight = floor->height;
-            const int32_t ceilingWidth = ceiling->width;
-            const int32_t ceilingHeight = ceiling->height;
+            uint32_t lightness = uint32_t((1 - rowDistance / lightDistance) * 255);
+
             uint32_t *dstFloor = frame.pixels + y * frame.width;
             uint32_t *dstCeiling = frame.pixels + (frame.height - 1 - y) * frame.width;
             for (int x = 0; x < frame.width; x++, dstFloor++, dstCeiling++) {
                 int32_t cellX = int32_t(floorX);
                 int32_t cellY = int32_t(floorY);
-                int32_t floorTx = int32_t(floorWidth * (floorX - cellX)) & (floorWidth - 1);
-                int32_t floorTy = int32_t(floorHeight * (floorY - cellY)) & (floorHeight - 1);
-                int32_t ceilingTx = int32_t(ceilingWidth * (floorX - cellX)) & (ceilingWidth - 1);
-                int32_t ceilingTy = int32_t(ceilingHeight * (floorY - cellY)) & (ceilingHeight - 1);
+                float distX = floorX - cellX;
+                float distY = floorY - cellY;
+                int32_t floorTx = int32_t(floorWidth * distX) & floorWidthMinusOne;
+                int32_t floorTy = int32_t(floorHeight * distY) & floorHeightMinusOne;
+                int32_t ceilingTx = int32_t(ceilingWidth * distX) & ceilingWidthMinusOne;
+                int32_t ceilingTy = int32_t(ceilingHeight * distY) & ceilingHeightMinusOne;
 
                 floorX += floorStepX;
                 floorY += floorStepY;
 
-                *dstCeiling = _modulate(ceiling->pixels[ceilingTx + floorWidth * ceilingTy], modulate);
-                *dstFloor = _modulate(floor->pixels[floorTx + floorWidth * floorTy], modulate);
+                _darken(&ceiling->pixels[ceilingTx + floorWidth * ceilingTy], dstCeiling, lightness);
+                _darken(&floor->pixels[floorTx + floorWidth * floorTy], dstFloor, lightness);
             }
         }
     }
@@ -268,7 +281,7 @@ void lilray::render(Image &frame, Camera &camera, Map &map, Image *walls[], Imag
         float cellHeight = frameHalfHeight / distance;
         Image *texture = walls[cell - 1];
         int32_t textureX = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
-        float modulate = 1 - distance / lightDistance;
+        uint32_t modulate = uint32_t((1 - distance / lightDistance) * 255);
         frame.drawVerticalTextureSlice(x, int32_t(frameHalfHeight - cellHeight),
                                        int32_t(frameHalfHeight + cellHeight),
                                        *texture, textureX, modulate);

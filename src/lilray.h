@@ -21,7 +21,7 @@ namespace lilray {
         void drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color);
 
         void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
-                                      float modulate);
+                                      uint32_t lightness);
     };
 
     struct Map {

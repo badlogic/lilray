@@ -5,19 +5,17 @@
 using namespace lilray;
 
 int main(int argc, char **argv) {
-    int resX = 320;
-    int resY = 240;
+    int resX = 640;
+    int resY = 480;
 
-    Image image("./wolftextures.png");
     Image *textures[] = {
-            image.getRegion(64, 0, 64, 64),
-            image.getRegion(128, 0, 64, 64),
-            image.getRegion(192, 0, 64, 64),
-            image.getRegion(256, 0, 64, 64),
-            image.getRegion(320, 0, 64, 64),
-            image.getRegion(384, 0, 64, 64),
-            image.getRegion(448, 0, 64, 64),
-            image.getRegion(0, 0, 64, 64),
+            new Image("STARG2.png"),
+            new Image("STARG3.png"),
+            new Image("STARGR2.png"),
+            new Image("TEKWALL1.png"),
+            new Image("TEKWALL2.png"),
+            new Image("TEKWALL3.png"),
+            new Image("TEKWALL4.png"),
     };
     Image frame(resX, resY);
     int32_t cells[] = {
@@ -61,8 +59,8 @@ int main(int argc, char **argv) {
 
         double start = mfb_timer_now(frameTimer);
         // frame.clear(0);
-        render(frame, camera, map, textures, textures[6], textures[5], 6);
-        // render(frame, camera, map, textures, nullptr, nullptr, 6);
+        render(frame, camera, map, textures, textures[1], textures[1], 6);
+        //render(frame, camera, map, textures, nullptr, nullptr, 6);
         printf("frame time: %f, pos: %f, %f\n", mfb_timer_now(frameTimer) - start, camera.x, camera.y);
         if (mfb_update_ex(window, frame.pixels, resX, resY) < 0) break;
     } while (true);
