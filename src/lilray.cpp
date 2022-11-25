@@ -72,7 +72,7 @@ void Frame::drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Te
     if (yStart >= height) return;
 
     int textureX = u;
-    float textureStepY = float(texture.height) / float(yEnd - yStart);
+    float textureStepY = float(texture.height) / float(yEnd - yStart + 1);
     float textureY = yStart < 0 ? -yStart * textureStepY : 0;
 
     if (yStart < 0) yStart = 0;
