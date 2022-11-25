@@ -10,30 +10,6 @@ include(FetchContent)
 FetchContent_Declare(minifb GIT_REPOSITORY https://github.com/emoon/minifb)
 FetchContent_MakeAvailable(minifb)
 
-if (MSVC)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W3 -D_CRT_SECURE_NO_WARNINGS")
-
-    if (CMAKE_BUILD_TYPE MATCHES Release)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    endif ()
-
-    if (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /PROFILE")
-    endif ()
-
-    message("MSVC C Flags: ${CMAKE_C_FLAGS}")
-else ()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-missing-field-initializers")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fsanitize=undefined")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fsanitize=undefined")
-
-    if (CMAKE_BUILD_TYPE MATCHES Release)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3")
-    endif ()
-    message("Clang C Flags: ${CMAKE_C_FLAGS}")
-    message("Clang C Flags Release: ${CMAKE_C_FLAGS_RELEASE}")
-endif ()
-
 include_directories(src)
 add_executable(lilray "src/lilray.cpp" "src/main.cpp")
 target_link_libraries(lilray LINK_PUBLIC minifb)
