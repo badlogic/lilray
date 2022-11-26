@@ -22,6 +22,9 @@ namespace lilray {
 
         void drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
                                     uint8_t lightness);
+
+        void drawVerticalImageSliceAlpha(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
+                                    uint8_t lightness);
     };
 
     struct Map {
@@ -47,6 +50,8 @@ namespace lilray {
         Camera(float x, float y, float angle, float fieldOfView);
 
         void move(Map &map, float distance);
+
+        void strafe(Map &map, float distance);
 
         void rotate(float degrees);
     };
