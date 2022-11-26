@@ -21,7 +21,7 @@ namespace lilray {
         void drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color);
 
         void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
-                                      uint32_t lightness);
+                                      uint8_t lightness);
     };
 
     struct Map {
@@ -56,11 +56,20 @@ namespace lilray {
         Image *image;
         float distance;
 
-        Sprite(float x, float y, float height, Image *image): x(x), y(y), height(height), image(image) {}
+        Sprite(float x, float y, float height, Image *image) : x(x), y(y), height(height), image(image) {}
     };
 
-    void
-    render(Image &frame, float zbuffer[], Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, Image *walls[], Image *floor, Image *ceiling, float lightDistance);
+    struct Renderer {
+        Image frame;
+        float *zbuffer;
+        Image **wallTextures;
+        Image *floorTexture;
+        Image *ceilingTexture;
+
+        Renderer(int32_t width, int32_t height, Image *wallTextures[], Image *floorTexture = nullptr, Image *ceilingTexture = nullptr);
+
+        void render(Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, float lightDistance);
+    };
 
     void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels);
 }
