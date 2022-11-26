@@ -49,7 +49,8 @@ int main(int argc, char **argv) {
             new Sprite(1.5f, 1.5f, 0.7, &grunt)
     };
     Camera camera(5.137084f, 8.366442f, 38.213917f, 66);
-    Renderer renderer(resX, resY, textures, textures[1], textures[1]);
+    // Camera camera(4.651269, 7.099933, -90.143478, 66);
+    Renderer renderer(resX, resY, textures, sizeof(textures) / sizeof(Image *), textures[1], textures[1]);
 
     mfb_window *window = mfb_open_ex("lilray", resX * 2, resY * 2, WF_RESIZABLE);
     if (!window) return 0;
@@ -64,7 +65,8 @@ int main(int argc, char **argv) {
 
         double start = mfb_timer_now(frameTimer);
         renderer.render(camera, map, sprites, sizeof(sprites) / sizeof(Sprite *), 6);
-        printf("frame time: %f, pos: %f, %f, angle: %f\n", mfb_timer_now(frameTimer) - start, camera.x, camera.y, camera.angle);
+        printf("frame time: %f, pos: %f, %f, angle: %f\n", mfb_timer_now(frameTimer) - start, camera.x, camera.y,
+               camera.angle);
         if (mfb_update_ex(window, renderer.frame.pixels, resX, resY) < 0) break;
     } while (true);
 }

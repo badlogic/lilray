@@ -18,10 +18,10 @@ namespace lilray {
 
         void clear(uint32_t clearColor);
 
-        void drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color);
+        void drawVerticalLine(int32_t x, int32_t ys, int32_t ye, uint32_t color);
 
-        void drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
-                                      uint8_t lightness);
+        void drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
+                                    uint8_t lightness);
     };
 
     struct Map {
@@ -63,15 +63,15 @@ namespace lilray {
         Image frame;
         float *zbuffer;
         Image **wallTextures;
+        int32_t numWallTextures;
         Image *floorTexture;
         Image *ceilingTexture;
 
-        Renderer(int32_t width, int32_t height, Image *wallTextures[], Image *floorTexture = nullptr, Image *ceilingTexture = nullptr);
+        Renderer(int32_t width, int32_t height, Image *wallTextures[], int32_t numWallTextures,
+                 Image *floorTexture = nullptr, Image *ceilingTexture = nullptr);
 
         void render(Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, float lightDistance);
     };
-
-    void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels);
 }
 
 #endif

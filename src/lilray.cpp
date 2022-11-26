@@ -17,10 +17,22 @@ static inline float signum(float v) {
 }
 
 static inline uint32_t darken(uint32_t color, uint8_t lightness) {
-    uint64_t mask = 0x0000FF0000FF00FF;
     uint64_t expand = (((uint64_t) color) << 32) | color;
-    uint64_t x = (((expand & mask) * lightness) >> 8) & mask;
+    uint64_t x = (((expand & 0x0000FF0000FF00FF) * lightness) >> 8) & 0x0000FF0000FF00FF;
     return (uint32_t) ((x >> 32) | x) | (color & 0xFF000000);
+}
+
+static inline void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
+    numPixels <<= 2;
+    uint8_t *src = (uint8_t *) argb;
+    uint8_t *dst = (uint8_t *) rgba;
+    for (size_t i = 0; i < numPixels; i += 4) {
+        uint8_t b = src[i], g = src[i + 1], r = src[i + 2], a = src[i + 3];
+        dst[i] = r;
+        dst[i + 1] = g;
+        dst[i + 2] = b;
+        dst[i + 3] = a;
+    }
 }
 
 static inline float distance(float x1, float y1, float x2, float y2) {
@@ -33,30 +45,26 @@ static int spriteCompare(const void *a, const void *b) {
 }
 
 Image::Image(const char *file) {
-    int w, h, n;
-    pixels = (uint32_t *) stbi_load(file, &w, &h, &n, 4);
-    width = w; height = h;
+    pixels = (uint32_t *) stbi_load(file, &width, &height, nullptr, 4);
     argb_to_rgba(pixels, pixels, width * height);
 }
 
 Image::Image(int32_t width, int32_t height, const uint32_t *pixels) : width(width), height(height) {
-    this->pixels = (uint32_t *) malloc(sizeof(uint32_t) * width * height);
+    this->pixels = new uint32_t[width * height];
     if (pixels) memcpy(this->pixels, pixels, sizeof(uint32_t) * width * height);
 }
 
 Image::~Image() {
-    free(pixels);
+    delete pixels;
 }
 
 Image *Image::getRegion(int32_t x, int32_t y, int32_t w, int32_t h) {
     Image *region = new Image(w, h);
-    for (int dy = 0; dy < h; y++, dy++) {
+    for (int dy = 0; dy < h; y++, dy++, x -= w) {
         for (int dx = 0; dx < w; x++, dx++) {
-            if (x < 0 || x >= width) continue;
-            if (y < 0 || y >= height) continue;
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
             region->pixels[dx + dy * h] = pixels[x + y * width];
         }
-        x -= w;
     }
     return region;
 }
@@ -67,72 +75,66 @@ void Image::clear(uint32_t clearColor) {
     }
 }
 
-void Image::drawVerticalLine(int32_t x, int32_t yStart, int32_t yEnd, uint32_t color) {
-    if (yEnd < yStart) {
-        int32_t tmp = yEnd;
-        yEnd = yStart;
-        yStart = tmp;
-    }
+void Image::drawVerticalLine(int32_t x, int32_t ys, int32_t ye, uint32_t color) {
     if (x < 0 || x >= width) return;
-    if (yEnd < 0) return;
-    if (yStart >= height) return;
-    if (yStart < 0) yStart = 0;
-    if (yEnd >= height) yEnd = height - 1;
-    uint32_t *dst = pixels + x + yStart * width;
-    for (int i = 0, n = yEnd - yStart + 1; i < n; i++) {
+    if (ye < ys) {
+        int32_t tmp = ye;
+        ye = ys;
+        ys = tmp;
+    }
+    if (ye < 0 || ys >= height) return;
+    if (ys < 0) ys = 0;
+    if (ye >= height) ye = height - 1;
+    int32_t frameWidth = width;
+    uint32_t *dst = pixels + x + ys * width;
+    for (int i = 0, n = ye - ys + 1; i < n; i++) {
         *dst = color;
-        dst += width;
+        dst += frameWidth;
     }
 }
 
-void Image::drawVerticalTextureSlice(int32_t x, int32_t yStart, int32_t yEnd, Image &texture, int32_t textureX,
-                                     uint8_t lightness) {
-    if (yEnd < yStart) {
-        int32_t tmp = yEnd;
-        yEnd = yStart;
-        yStart = tmp;
-    }
+void Image::drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
+                                   uint8_t lightness) {
     if (x < 0 || x >= width) return;
-    if (yEnd < 0) return;
-    if (yStart >= height) return;
-    if (textureX < 0 || textureX >= texture.width) return;
-
-    float textureStepY = float(texture.height) / float(yEnd - yStart + 1);
-    float textureY = yStart < 0 ? float(-yStart) * textureStepY : 0;
-
-    if (yStart < 0) yStart = 0;
-    if (yEnd >= height) yEnd = height - 1;
-
-    uint32_t *texturePixels = texture.pixels + textureX;
+    if (tx < 0 || tx >= texture.width) return;
+    if (ye < ys) {
+        int32_t tmp = ye;
+        ye = ys;
+        ys = tmp;
+    }
+    if (ye < 0 || ys >= height) return;
     int32_t textureWidth = texture.width;
-    uint32_t *framePixels = pixels + x + yStart * width;
     int32_t frameWidth = width;
-    for (int i = 0, n = yEnd - yStart + 1; i < n; i++) {
-        uint32_t texelColor = texturePixels[(uint32_t(textureY) * textureWidth)];
-        *framePixels = darken(texelColor, lightness);
-        textureY += textureStepY;
-        framePixels += frameWidth;
+    float stepY = float(texture.height) / float(ye - ys + 1);
+    float ty = ys < 0 ? float(-ys) * stepY : 0;
+    if (ys < 0) ys = 0;
+    if (ye >= height) ye = height - 1;
+    uint32_t *src = texture.pixels + tx;
+    uint32_t *dst = pixels + x + ys * width;
+    for (int i = 0, n = ye - ys + 1; i < n; i++) {
+        uint32_t color = src[(uint32_t(ty) * textureWidth)];
+        *dst = darken(color, lightness);
+        ty += stepY;
+        dst += frameWidth;
     }
 }
 
 Map::Map(int32_t width, int32_t height, int32_t *cells) : width(width), height(height) {
-    this->cells = (int32_t *) malloc(sizeof(int32_t) * width * height);
+    this->cells = new int32_t[width * height];
     memcpy(this->cells, cells, sizeof(int32_t) * width * height);
 }
 
 Map::~Map() {
-    free(cells);
+    delete cells;
 }
 
 void Map::setCell(int32_t x, int32_t y, int32_t value) {
-    if (x < 0 || x >= width) return;
-    if (y < 0 || y >= height) return;
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
     cells[x + y * width] = value;
 }
 
 int32_t Map::getCell(int x, int y) {
-    if (x < 0 || x >= width) return 0;
-    if (y < 0 || y >= height) return 0;
+    if (x < 0 || x >= width || y < 0 || y >= height) return 0;
     return cells[x + y * width];
 }
 
@@ -195,22 +197,10 @@ void Camera::rotate(float degrees) {
     angle += degrees;
 }
 
-void lilray::argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
-    numPixels <<= 2;
-    uint8_t *src = (uint8_t *) argb;
-    uint8_t *dst = (uint8_t *) rgba;
-    for (size_t i = 0; i < numPixels; i += 4) {
-        uint8_t b = src[i], g = src[i + 1], r = src[i + 2], a = src[i + 3];
-        dst[i] = r;
-        dst[i + 1] = g;
-        dst[i + 2] = b;
-        dst[i + 3] = a;
-    }
-}
-
-Renderer::Renderer(int32_t width, int32_t height, Image **wallTextures, Image *floorTexture, Image *ceilingTexture)
-        : frame(width, height), zbuffer(new float[width]), wallTextures(wallTextures), floorTexture(floorTexture),
-          ceilingTexture(ceilingTexture) {
+Renderer::Renderer(int32_t width, int32_t height, Image **wallTextures, int numWallTextures, Image *floorTexture,
+                   Image *ceilingTexture)
+        : frame(width, height), zbuffer(new float[width]), wallTextures(wallTextures), numWallTextures(numWallTextures),
+          floorTexture(floorTexture), ceilingTexture(ceilingTexture) {
 }
 
 void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSprites, float lightDistance) {
@@ -230,7 +220,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         float floorScaleX = (rayDirXRight - rayDirXLeft) / float(frame.width);
         float floorScaleY = (rayDirYRight - rayDirYLeft) / float(frame.width);
         int32_t floorWidth = floorTexture->width;
-        int32_t floorHeigh = floorTexture->height;
+        int32_t floorHeight = floorTexture->height;
         int32_t ceilingWidth = ceilingTexture->width;
         int32_t ceilingHeight = ceilingTexture->height;
         uint32_t *srcFloor = floorTexture->pixels;
@@ -248,11 +238,14 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
             uint32_t *dstCeiling = frame.pixels + (frame.height - 1 - y) * frame.width;
             for (int32_t x = 0, nn = frame.width; x < nn; x++, dstFloor++, dstCeiling++) {
                 float distX = floorX - float(int32_t(floorX)), distY = floorY - float(int32_t(floorY));
-                int32_t floorTx = int32_t(floorWidth * distX), floorTy = int32_t(floorHeigh * distY);
-                int32_t ceilingTx = int32_t(ceilingWidth * distX), ceilingTy = int32_t(ceilingHeight * distY);
-                *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
+                int32_t floorTx = int32_t(floorWidth * distX) & (floorWidth - 1);
+                int32_t floorTy = int32_t(floorHeight * distY) & (floorHeight - 1);
                 *dstFloor = darken(srcFloor[floorTx + floorWidth * floorTy], lightness);
-                floorX += floorStepX; floorY += floorStepY;
+                int32_t ceilingTx = int32_t(ceilingWidth * distX) & (ceilingWidth - 1);
+                int32_t ceilingTy = int32_t(ceilingHeight * distY) & (ceilingHeight - 1);
+                *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
+                floorX += floorStepX;
+                floorY += floorStepY;
             }
         }
     }
@@ -270,11 +263,11 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         distance = distance * (rayDirX * camDirX + rayDirY * camDirY);
         float cellHeight = frameHalfHeight / distance;
         Image *texture = wallTextures[cell - 1];
-        int32_t textureX = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
+        int32_t tx = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
         uint32_t modulate = uint32_t((1 - fmin(distance, lightDistance) / lightDistance) * 255);
-        frame.drawVerticalTextureSlice(x, int32_t(frameHalfHeight - cellHeight),
-                                       int32_t(frameHalfHeight + cellHeight),
-                                       *texture, textureX, modulate);
+        frame.drawVerticalImageSlice(x, int32_t(frameHalfHeight - cellHeight),
+                                     int32_t(frameHalfHeight + cellHeight),
+                                     *texture, tx, modulate);
         zbuffer[x] = distance;
     }
 
