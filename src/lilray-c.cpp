@@ -204,7 +204,8 @@ void lilray_renderer_dispose(lilray_renderer renderer) {
 
 lilray_image lilray_renderer_get_frame(lilray_renderer renderer) {
     if (!renderer) return nullptr;
-    return (lilray_image) &((Renderer *) renderer)->frame;
+    Image *frame = &((Renderer *) renderer)->frame;
+    return (lilray_image) frame;
 }
 
 void lilray_renderer_render(lilray_renderer renderer, lilray_camera camera, lilray_map map, lilray_sprite *sprites,
