@@ -139,15 +139,76 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-void lilray_render(lilray_image frame, lilray_camera camera, lilray_map map, lilray_image *walls, lilray_image floor,
-                   lilray_image ceiling, float lightDistance) {
-    if (!frame) return;
-    if (!camera) return;
-    if (!map) return;
-    render(*(Image *) frame, *(Camera *) camera, *(Map *) map, (Image **) walls, (Image *) floor, (Image *) ceiling,
-           lightDistance);
+lilray_sprite lilray_sprite_create(float x, float y, float height, lilray_image *image) {
+    Sprite *sprite = new Sprite(x, y, height, (Image *) image);
+    return (lilray_sprite) sprite;
 }
 
-void lilray_argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
-    lilray::argb_to_rgba(argb, rgba, numPixels);
+void lilray_sprite_dispose(lilray_sprite sprite) {
+    if (!sprite) return;
+    delete sprite;
+}
+
+float lilray_sprite_get_x(lilray_sprite sprite) {
+    if (!sprite) return 0;
+    return ((Sprite *) sprite)->x;
+}
+
+void lilray_sprite_set_x(lilray_sprite sprite, float x) {
+    if (!sprite) return;
+    ((Sprite *) sprite)->x = x;
+}
+
+float lilray_sprite_get_y(lilray_sprite sprite) {
+    if (!sprite) return 0;
+    return ((Sprite *) sprite)->y;
+}
+
+void lilray_sprite_set_y(lilray_sprite sprite, float y) {
+    if (!sprite) return;
+    ((Sprite *) sprite)->y = y;
+}
+
+float lilray_sprite_get_height(lilray_sprite sprite) {
+    if (!sprite) return 0;
+    return ((Sprite *) sprite)->height;
+}
+
+void lilray_sprite_set_height(lilray_sprite sprite, float height) {
+    if (!sprite) return;
+    ((Sprite *) sprite)->height = height;
+}
+
+lilray_image lilray_sprite_get_image(lilray_sprite sprite) {
+    if (!sprite) return nullptr;
+    return (lilray_image) ((Sprite *) sprite)->image;
+}
+
+void lilray_sprite_set_image(lilray_sprite sprite, lilray_image *image) {
+    if (!sprite) return;
+    ((Sprite *) sprite)->image = (Image *) image;
+}
+
+lilray_renderer lilray_renderer_create(int32_t width, int32_t height, lilray_image *wall_textures,
+                                       int32_t num_wall_textures, lilray_image floor_texture,
+                                       lilray_image ceiling_texture) {
+    Renderer *renderer = new Renderer(width, height, (Image **) wall_textures, num_wall_textures,
+                                      (Image *) floor_texture, (Image *) ceiling_texture);
+    return (lilray_renderer) renderer;
+}
+
+void lilray_renderer_dispose(lilray_renderer renderer) {
+    if (!renderer) return;
+    delete renderer;
+}
+
+lilray_image lilray_renderer_get_frame(lilray_renderer renderer) {
+    if (!renderer) return nullptr;
+    return (lilray_image) &((Renderer *) renderer)->frame;
+}
+
+void lilray_renderer_render(lilray_renderer renderer, lilray_camera camera, lilray_map map, lilray_sprite *sprites,
+                            int num_sprites, float light_distance) {
+    if (!renderer) return;
+    ((Renderer *) renderer)->render(*(Camera *) camera, *(Map *) map, (Sprite **) sprites, num_sprites, light_distance);
 }
