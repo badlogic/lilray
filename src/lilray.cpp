@@ -44,6 +44,11 @@ static int spriteCompare(const void *a, const void *b) {
     return int(signum((*(Sprite **) b)->distance - (*(Sprite **) a)->distance));
 }
 
+
+static inline int32_t toFixed(float v, int32_t bits) {
+    return int32_t(v * (1 << bits));
+}
+
 Image::Image(const char *file) {
     pixels = (uint32_t *) stbi_load(file, &width, &height, nullptr, 4);
     argb_to_rgba(pixels, pixels, width * height);
@@ -256,7 +261,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
 
     for (int i = 0; i < frame.width; i++) zbuffer[i] = INFINITY;
 
-    if (floorTexture && ceilingTexture) {
+    /*if (floorTexture && ceilingTexture) {
         float rayDirXLeft = camDirX + -projectionPlaneWidth * camRightX;
         float rayDirYLeft = camDirY + -projectionPlaneWidth * camRightY;
         float rayDirXRight = camDirX + projectionPlaneWidth * camRightX;
@@ -314,32 +319,40 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
                                      int32_t(frameHalfHeight + cellHeight),
                                      *texture, tx, lightness);
         zbuffer[x] = distance;
-    }
+    }*/
 
     for (int i = 0; i < numSprites; i++) {
         Sprite *sprite = sprites[i];
         sprite->distance = distance(sprite->x, sprite->y, camera.x, camera.y);
     }
     qsort(sprites, numSprites, sizeof(Sprite *), &spriteCompare);
+    int32_t fpBits = 0;
     for (int i = 0; i < numSprites; i++) {
         Sprite *sprite = sprites[i];
         float viewDirX = sprite->x - camera.x, viewDirY = sprite->y - camera.y;
         if (viewDirX * camDirX + viewDirY * camDirY < 0) continue;
         float viewAngle = atan2f(viewDirY, viewDirX) * RAD_TO_DEG - camera.angle;
         float distance = sprite->distance * cosf(viewAngle * DEG_TO_RAD);
+        uint8_t lightness = uint8_t((1 - fmax(0.2, fmin(distance, lightDistance) / lightDistance)) * 255);
         float halfUnitHeight = frameHalfHeight / distance;
         float screenHeight = halfUnitHeight * 2 * sprite->height;
         float screenWidth = screenHeight * (float(sprite->image->width) / float(sprite->image->height));
         float xc = (tanf(viewAngle * DEG_TO_RAD) / projectionPlaneWidth * frameHalfWidth + frameHalfWidth);
-        int32_t x = int32_t(xc - screenWidth / 2);
-        int32_t y = int32_t(frameHalfHeight + halfUnitHeight - screenHeight);
-        int32_t w = int32_t(screenWidth);
-        uint8_t lightness = uint8_t((1 - fmax(0.2, fmin(distance, lightDistance) / lightDistance)) * 255);
-        float texelStep = 1 / float(w) * float(sprite->image->width);
-        for (int32_t col = 0; col < w; col++, x++) {
-            if (x > 0 && x < frame.width) {
-                if (zbuffer[x] < distance) continue;
-                frame.drawVerticalImageSliceAlpha(x, y, y + screenHeight, *sprite->image, col * texelStep, lightness);
+        int32_t subStep = 1 << fpBits;
+        int32_t subMask = subStep - 1;
+        int32_t x = toFixed(xc - screenWidth / 2, fpBits);
+        int32_t y = toFixed(frameHalfHeight + halfUnitHeight - screenHeight, fpBits);
+        int32_t w = toFixed(screenWidth, fpBits);
+        int32_t h = toFixed(screenHeight, fpBits);
+        int32_t xe = x + w;
+        x = (x + subMask) & ~subMask;
+        y = (y + subMask) & ~subMask;
+        float texelStep = 1 / float(w >> fpBits) * float(sprite->image->width);
+        for (int32_t col = 0; x < xe; x += subStep, col++) {
+            int32_t xi = x >> fpBits;
+            if (xi > 0 && xi < frame.width) {
+                if (zbuffer[xi] < distance) continue;
+                frame.drawVerticalImageSliceAlpha(xi, y >> fpBits, (y + h) >> fpBits, *sprite->image, col * texelStep, 255);
             }
         }
     }
