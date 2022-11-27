@@ -1,9 +1,27 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <script src="./liblilray.js"></script>
+    <style>
+        .keys > div {
+            border: 1px solid black;
+            width: 4em;
+            text-align: center;
+            user-select: none;
+        }
+    </style>
 </head>
 <body>
-<canvas id="canvas" width="640" heigh="480" tabindex="1" style="width: 640px; height: 480px"></canvas>
+<div style="width: 640px; margin: auto;">
+    <canvas id="canvas" width="640" heigh="480" tabindex="1" style="width: 640px; height: 480px"></canvas>
+    <div class="keys" style="display: flex; justify-content: center; width: 100%; font-size: 4em;">
+        <div id="up">↑</div>
+        <div id="down">↓</div>
+        <div id="left">←</div>
+        <div id="right">→</div>
+    </div>
+</div>
 </body>
 <script>
     let lib;
@@ -24,6 +42,22 @@
         if (event.key === "d") keyD = false;
     }, false);
     canvas.focus();
+    document.getElementById("left").addEventListener("mousedown", () => keyA = true);
+    document.getElementById("left").addEventListener("mouseup", () => keyA = false);
+    document.getElementById("left").addEventListener("touchstart", () => keyA = true);
+    document.getElementById("left").addEventListener("touchend", () => keyA = false);
+    document.getElementById("right").addEventListener("mousedown", () => keyD = true);
+    document.getElementById("right").addEventListener("mouseup", () => keyD = false);
+    document.getElementById("right").addEventListener("touchstart", () => keyD = true);
+    document.getElementById("right").addEventListener("touchend", () => keyD = false);
+    document.getElementById("up").addEventListener("mousedown", () => keyW = true);
+    document.getElementById("up").addEventListener("mouseup", () => keyW = false);
+    document.getElementById("up").addEventListener("touchstart", () => keyW = true);
+    document.getElementById("up").addEventListener("touchend", () => keyW = false);
+    document.getElementById("down").addEventListener("mousedown", () => keyS = true);
+    document.getElementById("down").addEventListener("mouseup", () => keyS = false);
+    document.getElementById("down").addEventListener("touchstart", () => keyS = true);
+    document.getElementById("down").addEventListener("touchend", () => keyS = false);
 
     let loadImage = async (url) => {
         let response = await fetch(url)
@@ -92,6 +126,7 @@
         let renderer = lib._lilray_renderer_create(resX, resY, texturesPtr, textures.length, textures[1], textures[1]);
 
         let lastFrameTime = Date.now();
+
         function render() {
             let time = Date.now();
             let delta = (time - lastFrameTime) / 1000;
@@ -108,6 +143,7 @@
             this.canvas.getContext("2d").putImageData(imageData, 0, 0);
             requestAnimationFrame(render);
         }
+
         render();
     }
 
