@@ -33,15 +33,17 @@
 FFI_OPAQUE_TYPE(lilray_image)
 FFI_EXPORT lilray_image lilray_image_create(int32_t width, int32_t height, uint32_t *pixels);
 FFI_EXPORT lilray_image lilray_image_create_from_file(const char *file);
-FFI_EXPORT void lilray_image_dispose(lilray_image texture);
-FFI_EXPORT int32_t lilray_image_get_width(lilray_image texture);
-FFI_EXPORT int32_t lilray_image_get_height(lilray_image texture);
-FFI_EXPORT uint32_t *lilray_image_get_pixels(lilray_image texture);
-FFI_EXPORT lilray_image lilray_image_get_region(lilray_image texture, int32_t x, int32_t y, int32_t width,
+FFI_EXPORT lilray_image lilray_image_create_from_memory(uint8_t *data, int32_t num_bytes);
+FFI_EXPORT void lilray_image_dispose(lilray_image image);
+FFI_EXPORT int32_t lilray_image_get_width(lilray_image image);
+FFI_EXPORT int32_t lilray_image_get_height(lilray_image image);
+FFI_EXPORT uint32_t *lilray_image_get_pixels(lilray_image image);
+FFI_EXPORT lilray_image lilray_image_get_region(lilray_image image, int32_t x, int32_t y, int32_t width,
                                                 int32_t height);
-FFI_EXPORT void lilray_image_clear(lilray_image texture, uint32_t argb_color);
-FFI_EXPORT void lilray_image_vertical_line(lilray_image texture, int32_t x, int32_t y_start, int32_t y_end,
+FFI_EXPORT void lilray_image_clear(lilray_image image, uint32_t argb_color);
+FFI_EXPORT void lilray_image_vertical_line(lilray_image image, int32_t x, int32_t y_start, int32_t y_end,
                                            uint32_t argb_color);
+FFI_EXPORT void lilray_image_to_rgba(lilray_image image);
 
 FFI_OPAQUE_TYPE(lilray_map)
 FFI_EXPORT lilray_map lilray_map_create(int32_t width, int32_t height, int32_t *cells);

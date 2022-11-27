@@ -1,0 +1,116 @@
+<html>
+<head>
+    <script src="./liblilray.js"></script>
+</head>
+<body>
+<canvas id="canvas" width="640" heigh="480" tabindex="1" style="width: 640px; height: 480px"></canvas>
+</body>
+<script>
+    let lib;
+    let canvas = document.getElementById("canvas");
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    let keyW = false, keyS = false, keyA = false, keyD = false;
+    canvas.addEventListener("keydown", (event) => {
+        if (event.key === "w") keyW = true;
+        if (event.key === "s") keyS = true;
+        if (event.key === "a") keyA = true;
+        if (event.key === "d") keyD = true;
+    }, false);
+    canvas.addEventListener("keyup", (event) => {
+        if (event.key === "w") keyW = false;
+        if (event.key === "s") keyS = false;
+        if (event.key === "a") keyA = false;
+        if (event.key === "d") keyD = false;
+    }, false);
+    canvas.focus();
+
+    let loadImage = async (url) => {
+        let response = await fetch(url)
+        if (!response.ok) throw new Error("Couldn't load image: " + url);
+        let data = new Uint8Array(await response.arrayBuffer());
+        let ptr = lib._malloc(data.byteLength);
+        lib.HEAPU8.set(data, ptr);
+        let image = lib._lilray_image_create_from_memory(ptr, data.byteLength);
+        lib._free(ptr);
+        return image;
+    }
+
+    let initialize = async function () {
+        lib = await liblilray();
+        const resX = 640, resY = 480;
+        const rotationSpeed = 70;
+        const movementSpeed = 2.5;
+
+        let textures = [
+            await loadImage("assets/STARG2.png"),
+            await loadImage("assets/STARG3.png"),
+            await loadImage("assets/STARGR2.png"),
+            await loadImage("assets/TEKWALL1.png"),
+            await loadImage("assets/TEKWALL2.png"),
+            await loadImage("assets/TEKWALL3.png"),
+            await loadImage("assets/TEKWALL4.png"),
+        ];
+        let texturesPtr = lib._malloc(textures.length * 4);
+        lib.HEAPU32.set(textures, texturesPtr / 4);
+
+        let cells = [
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 2, 2, 2, 0, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        ];
+        let cellsPtr = lib._malloc(cells.length * 4);
+        lib.HEAPU32.set(cells, cellsPtr / 4);
+
+        let grunt = await loadImage("assets/grunt.png");
+        let sprites = [
+            lib._lilray_sprite_create(4.5, 2.5, 0.7, grunt)
+        ];
+        let spritesPtr = lib._malloc(sprites.length * 4);
+        lib.HEAPU32.set(sprites, spritesPtr / 4);
+
+        let map = lib._lilray_map_create(21, 21, cellsPtr);
+        let camera = lib._lilray_camera_create(2.5, 2.5, 0, 66);
+        let renderer = lib._lilray_renderer_create(resX, resY, texturesPtr, textures.length, textures[1], textures[1]);
+
+        let lastFrameTime = Date.now();
+        function render() {
+            let time = Date.now();
+            let delta = (time - lastFrameTime) / 1000;
+            lastFrameTime = time;
+            if (keyW) lib._lilray_camera_move(camera, map, movementSpeed * delta);
+            if (keyS) lib._lilray_camera_move(camera, map, -movementSpeed * delta);
+            if (keyA) lib._lilray_camera_rotate(camera, -rotationSpeed * delta);
+            if (keyD) lib._lilray_camera_rotate(camera, rotationSpeed * delta);
+            lib._lilray_renderer_render(renderer, camera, map, spritesPtr, sprites.length, 6);
+            let frame = lib._lilray_renderer_get_frame(renderer);
+            lib._lilray_image_to_rgba(frame);
+            let framePixels = new Uint8ClampedArray(lib.HEAPU8.buffer, lib._lilray_image_get_pixels(frame), resX * resY * 4);
+            let imageData = new ImageData(framePixels, resX, resY);
+            this.canvas.getContext("2d").putImageData(imageData, 0, 0);
+            requestAnimationFrame(render);
+        }
+        render();
+    }
+
+    initialize();
+</script>
+</html>

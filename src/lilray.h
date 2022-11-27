@@ -10,6 +10,8 @@ namespace lilray {
 
         explicit Image(const char *file);
 
+        Image(uint8_t *bytes, int32_t num_bytes);
+
         Image(int32_t width, int32_t height, const uint32_t *pixels = nullptr);
 
         ~Image();
@@ -25,6 +27,8 @@ namespace lilray {
 
         void drawVerticalImageSliceAlpha(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
                                     uint8_t lightness);
+
+        void toRgba();
     };
 
     struct Map {

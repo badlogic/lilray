@@ -11,6 +11,10 @@ lilray_image lilray_image_create_from_file(const char *file) {
     return (lilray_image) new Image(file);
 }
 
+FFI_EXPORT lilray_image lilray_image_create_from_memory(uint8_t *data, int32_t num_bytes) {
+    return (lilray_image) new Image(data, num_bytes);
+}
+
 void lilray_image_dispose(lilray_image texture) {
     if (!texture) return;
     delete texture;
@@ -45,6 +49,11 @@ void
 lilray_image_draw_vertical_line(lilray_image image, int32_t x, int32_t y_start, int32_t y_end, uint32_t argb_color) {
     if (!image) return;
     ((Image *) image)->drawVerticalLine(x, y_start, y_end, argb_color);
+}
+
+void lilray_image_to_rgba(lilray_image image) {
+    if (!image) return;
+    ((Image *) image)->toRgba();
 }
 
 lilray_map lilray_map_create(int32_t width, int32_t height, int32_t *cells) {

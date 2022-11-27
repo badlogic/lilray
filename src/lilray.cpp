@@ -49,6 +49,11 @@ Image::Image(const char *file) {
     argb_to_rgba(pixels, pixels, width * height);
 }
 
+Image::Image(uint8_t *bytes, int32_t num_bytes) {
+    pixels = (uint32_t *) stbi_load_from_memory(bytes, num_bytes, &width, &height, nullptr, 4);
+    argb_to_rgba(pixels, pixels, width * height);
+}
+
 Image::Image(int32_t width, int32_t height, const uint32_t *pixels) : width(width), height(height) {
     this->pixels = new uint32_t[width * height];
     if (pixels) memcpy(this->pixels, pixels, sizeof(uint32_t) * width * height);
@@ -143,6 +148,10 @@ void Image::drawVerticalImageSliceAlpha(int32_t x, int32_t ys, int32_t ye, Image
         ty += stepY;
         dst += frameWidth;
     }
+}
+
+void Image::toRgba() {
+    argb_to_rgba(pixels, pixels, width * height);
 }
 
 Map::Map(int32_t width, int32_t height, int32_t *cells) : width(width), height(height) {
@@ -247,7 +256,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
 
     for (int i = 0; i < frame.width; i++) zbuffer[i] = INFINITY;
 
-    /*if (floorTexture && ceilingTexture) {
+    if (floorTexture && ceilingTexture) {
         float rayDirXLeft = camDirX + -projectionPlaneWidth * camRightX;
         float rayDirYLeft = camDirY + -projectionPlaneWidth * camRightY;
         float rayDirXRight = camDirX + projectionPlaneWidth * camRightX;
@@ -305,7 +314,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
                                      int32_t(frameHalfHeight + cellHeight),
                                      *texture, tx, lightness);
         zbuffer[x] = distance;
-    }*/
+    }
 
     for (int i = 0; i < numSprites; i++) {
         Sprite *sprite = sprites[i];

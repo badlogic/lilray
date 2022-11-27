@@ -42,8 +42,12 @@ int main(int argc, char **argv) {
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     };
+    lilray_image grunt = lilray_image_create_from_file("grunt.png");
+    lilray_sprite *sprites[] = {
+            lilray_sprite_create(7.5, 2.5, 0.7, grunt)
+    };
     lilray_map map = lilray_map_create(21, 21, cells);
-    lilray_camera camera = lilray_camera_create(2.5f, 2.5f, 90, 66);
+    lilray_camera camera = lilray_camera_create(2.5f, 2.5f, 0, 66);
     lilray_renderer renderer = lilray_renderer_create(resX, resY, textures, sizeof(textures) / sizeof(lilray_image),
                                                       textures[6], textures[5]);
 
@@ -57,7 +61,7 @@ int main(int argc, char **argv) {
         if (mfb_get_key_buffer(window)[KB_KEY_W]) lilray_camera_move(camera, map, movementSpeed * delta);
         if (mfb_get_key_buffer(window)[KB_KEY_S]) lilray_camera_move(camera, map, -movementSpeed * delta);
 
-        lilray_renderer_render(renderer, camera, map, NULL, 0, 8);
+        lilray_renderer_render(renderer, camera, map, sprites, sizeof(sprites) / sizeof(lilray_sprite), 8);
         if (mfb_update_ex(window, lilray_image_get_pixels(lilray_renderer_get_frame(renderer)), resX, resY) < 0) break;
     } while (-1);
 }
