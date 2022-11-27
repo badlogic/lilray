@@ -326,7 +326,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         sprite->distance = distance(sprite->x, sprite->y, camera.x, camera.y);
     }
     qsort(sprites, numSprites, sizeof(Sprite *), &spriteCompare);
-    int32_t fpBits = 0;
+    int32_t fpBits = 4;
     for (int i = 0; i < numSprites; i++) {
         Sprite *sprite = sprites[i];
         float viewDirX = sprite->x - camera.x, viewDirY = sprite->y - camera.y;
@@ -344,15 +344,17 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         int32_t y = toFixed(frameHalfHeight + halfUnitHeight - screenHeight, fpBits);
         int32_t w = toFixed(screenWidth, fpBits);
         int32_t h = toFixed(screenHeight, fpBits);
-        int32_t xe = x + w;
         x = (x + subMask) & ~subMask;
         y = (y + subMask) & ~subMask;
-        float texelStep = 1 / float(w >> fpBits) * float(sprite->image->width);
-        for (int32_t col = 0; x < xe; x += subStep, col++) {
+        w = (w + subMask) & ~subMask;
+        int32_t xe = x + w;
+        int32_t texelStep = toFixed(1 / screenWidth * float(sprite->image->width), 16);
+        for (int32_t tx = 0; x < xe; x += subStep, tx+=texelStep) {
             int32_t xi = x >> fpBits;
+            int32_t txi = tx >> 16;
             if (xi > 0 && xi < frame.width) {
                 if (zbuffer[xi] < distance) continue;
-                frame.drawVerticalImageSliceAlpha(xi, y >> fpBits, (y + h) >> fpBits, *sprite->image, col * texelStep, 255);
+                frame.drawVerticalImageSliceAlpha(xi, y >> fpBits, (y + h) >> fpBits, *sprite->image, txi, 255);
             }
         }
     }
