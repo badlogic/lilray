@@ -69,7 +69,7 @@ FFI_EXPORT void lilray_camera_move(lilray_camera camera, lilray_map map, float d
 FFI_EXPORT void lilray_camera_rotate(lilray_camera camera, float degrees);
 
 FFI_OPAQUE_TYPE(lilray_sprite)
-FFI_EXPORT lilray_sprite lilray_sprite_create(float x, float y, float height, lilray_image *image);
+FFI_EXPORT lilray_sprite lilray_sprite_create(float x, float y, float height, lilray_image image);
 FFI_EXPORT void lilray_sprite_dispose(lilray_sprite sprite);
 FFI_EXPORT float lilray_sprite_get_x(lilray_sprite sprite);
 FFI_EXPORT void lilray_sprite_set_x(lilray_sprite sprite, float x);

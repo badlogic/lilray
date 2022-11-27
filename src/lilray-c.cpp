@@ -148,7 +148,7 @@ void lilray_camera_rotate(lilray_camera camera, float degrees) {
     ((Camera *) camera)->rotate(degrees);
 }
 
-lilray_sprite lilray_sprite_create(float x, float y, float height, lilray_image *image) {
+lilray_sprite lilray_sprite_create(float x, float y, float height, lilray_image image) {
     Sprite *sprite = new Sprite(x, y, height, (Image *) image);
     return (lilray_sprite) sprite;
 }

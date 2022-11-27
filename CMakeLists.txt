@@ -29,3 +29,11 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/assets
         ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(subpixel "src/subpixel.cpp" "src/lilray.cpp")
+target_link_libraries(subpixel LINK_PUBLIC minifb)
+add_custom_command(
+        TARGET subpixel POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/assets
+        ${CMAKE_CURRENT_BINARY_DIR})
