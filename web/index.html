@@ -42,15 +42,15 @@
         const rotationSpeed = 70;
         const movementSpeed = 2.5;
 
-        let textures = [
-            await loadImage("assets/STARG2.png"),
-            await loadImage("assets/STARG3.png"),
-            await loadImage("assets/STARGR2.png"),
-            await loadImage("assets/TEKWALL1.png"),
-            await loadImage("assets/TEKWALL2.png"),
-            await loadImage("assets/TEKWALL3.png"),
-            await loadImage("assets/TEKWALL4.png"),
-        ];
+        let textures = await Promise.all([
+            loadImage("assets/STARG2.png"),
+            loadImage("assets/STARG3.png"),
+            loadImage("assets/STARGR2.png"),
+            loadImage("assets/TEKWALL1.png"),
+            loadImage("assets/TEKWALL2.png"),
+            loadImage("assets/TEKWALL3.png"),
+            loadImage("assets/TEKWALL4.png"),
+        ]);
         let texturesPtr = lib._malloc(textures.length * 4);
         lib.HEAPU32.set(textures, texturesPtr / 4);
 
