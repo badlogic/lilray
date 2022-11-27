@@ -50,22 +50,20 @@ drawTriangleInt(Image &frame, int32_t x0, int32_t y0, int32_t x1, int32_t y1, in
     }
 }
 
-#define FP_BITS 6
-
 int32_t toFixed(float v, int32_t bits) {
     return int32_t(v * (1 << bits));
 }
 
 void
-drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, float x2f, float y2f, uint32_t color) {
-    int32_t subStep = 1 << FP_BITS;
+drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, float x2f, float y2f, uint32_t color, int32_t fpBits) {
+    int32_t subStep = 1 << fpBits;
     int32_t subMask = subStep - 1;
-    int32_t x0 = toFixed(x0f, FP_BITS);
-    int32_t y0 = toFixed(y0f, FP_BITS);
-    int32_t x1 = toFixed(x1f, FP_BITS);
-    int32_t y1 = toFixed(y1f, FP_BITS);
-    int32_t x2 = toFixed(x2f, FP_BITS);
-    int32_t y2 = toFixed(y2f, FP_BITS);
+    int32_t x0 = toFixed(x0f, fpBits);
+    int32_t y0 = toFixed(y0f, fpBits);
+    int32_t x1 = toFixed(x1f, fpBits);
+    int32_t y1 = toFixed(y1f, fpBits);
+    int32_t x2 = toFixed(x2f, fpBits);
+    int32_t y2 = toFixed(y2f, fpBits);
 
     int32_t minX = min3(x0, x1, x2);
     int32_t minY = min3(y0, y1, y2);
@@ -74,8 +72,8 @@ drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, f
 
     minX = max(minX, 0);
     minY = max(minY, 0);
-    maxX = min(maxX, toFixed(frame.width - 1, FP_BITS));
-    maxY = min(maxY, toFixed(frame.height - 1, FP_BITS));
+    maxX = min(maxX, toFixed(frame.width - 1, fpBits));
+    maxY = min(maxY, toFixed(frame.height - 1, fpBits));
 
     minX = (minX + subMask) & ~subMask;
     minY = (minY + subMask) & ~subMask;
@@ -88,7 +86,7 @@ drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, f
             int32_t w2 = orient2d(x0, y0, x1, y1, px, py);
 
             if ((w0 | w1 | w2) >= 0) {
-                frame.pixels[(px >> FP_BITS) + (py >> FP_BITS) * frame.width] = color;
+                frame.pixels[(px >> fpBits) + (py >> fpBits) * frame.width] = color;
             }
         }
     }
@@ -135,7 +133,7 @@ struct Triangle {
 };
 
 int main(int argc, char **argv) {
-    const int resX = 256, resY = 128;
+    const int resX = 320, resY = 128;
     const int resScale = 4;
     Image frame(resX, resY);
     mfb_window *window = mfb_open_ex("lilray", resX * resScale, resY * resScale, WF_RESIZABLE);
@@ -147,11 +145,15 @@ int main(int argc, char **argv) {
         float delta = mfb_timer_delta(deltaTimer);
         frame.clear(0x0);
         tri.rotate(delta * 5);
-        tri.translate(resX / 3, resY / 2);
-        drawTriangleInt(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000);
-        tri.translate(resX / 3, 0);
-        drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000);
-        tri.translate(-resX / 3 * 2, -resY / 2);
+        tri.translate(40, resY / 2);
+        drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 0);
+        tri.translate(resX / 4, 0);
+        drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 2);
+        tri.translate(resX / 4, 0);
+        drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 4);
+        tri.translate(resX / 4, 0);
+        drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 8);
+        tri.translate(-resX / 4 * 3 - 40, -resY / 2);
         if (mfb_update_ex(window, frame.pixels, resX, resY) < 0) break;
     } while (true);
 }
