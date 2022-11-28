@@ -5,29 +5,38 @@
     <script src="./liblilray.js"></script>
     <style>
         .keys > div {
-            border: 1px solid black;
+            border: 1px solid #cccccc;
             width: 4em;
             text-align: center;
             user-select: none;
         }
+        a {
+            color: coral;
+        }
+
+        a :visited {
+            color: coral;
+        }
     </style>
 </head>
-<body>
+<body style="background: black; color: #cccccc; font-family: monospace">
 <div style="width: 640px; margin: auto;">
-    <canvas id="canvas" width="640" heigh="480" tabindex="1" style="width: 640px; height: 480px"></canvas>
+    <canvas id="canvas" width="640" heigh="480" tabindex="-1" style="width: 640px; height: 480px; user-select: none; border: none; outline-style: none;"></canvas>
     <div class="keys" style="display: flex; justify-content: center; width: 100%; font-size: 4em;">
         <div id="up">↑</div>
         <div id="down">↓</div>
         <div id="left">←</div>
         <div id="right">→</div>
     </div>
-    <div>or WASD</div>
-    <div id="frametime"></div>
+    <p>'lilray' is small recreational project to learn about raycasting, sub pixel precision rendering, fixed point math, and other 80ies and 90ies style game technologies, transplanted into the year 2022.</p>
+    <p>It's implemented as a simple (shoddy) C++ library with a C wrapper so it can be exposed to other platforms, like this very JavaScript/WASM demo.</p>
+    <h3><a href="https://github.com/badlogic/lilray">GitHub</a></h3>
 </div>
 </body>
 <script>
     let lib;
     let canvas = document.getElementById("canvas");
+    canvas.focus();
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
     let keyW = false, keyS = false, keyA = false, keyD = false;
@@ -140,17 +149,13 @@
             if (keyA) lib._lilray_camera_rotate(camera, -rotationSpeed * delta);
             if (keyD) lib._lilray_camera_rotate(camera, rotationSpeed * delta);
             lib._lilray_renderer_render(renderer, camera, map, spritesPtr, sprites.length, 6);
-            let start = Date.now();
             let frame = lib._lilray_renderer_get_frame(renderer);
-            let frameTime = Date.now() - start;
-            document.getElementById("frametime").textContent = frameTime + " ms";
             lib._lilray_image_to_rgba(frame);
             let framePixels = new Uint8ClampedArray(lib.HEAPU8.buffer, lib._lilray_image_get_pixels(frame), resX * resY * 4);
             let imageData = new ImageData(framePixels, resX, resY);
             this.canvas.getContext("2d").putImageData(imageData, 0, 0);
             requestAnimationFrame(render);
         }
-
         render();
     }
 
