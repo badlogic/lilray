@@ -319,18 +319,19 @@ void renderFloorAndCeilingSubPixel(Renderer &renderer, Camera &camera, float lig
     int32_t ceilingHeight = renderer.ceilingTexture->height;
     uint32_t *srcFloor = renderer.floorTexture->pixels;
     uint32_t *srcCeiling = renderer.ceilingTexture->pixels;
-    for (int32_t y = frameHalfHeight + 1, n = frame.height; y < n; y++) {
-        int32_t p = y - frameHalfHeight;
+    for (int32_t y = 0, n = frameHalfHeight + 1; y < n; y++) {
+        int32_t p = -(y - frameHalfHeight);
         float rowDistance = posZ / float(p);
         int32_t floorStepX = floatToFixed(rowDistance * floorScaleX, TEXEL_FP_BITS);
         int32_t floorStepY = floatToFixed(rowDistance * floorScaleY, TEXEL_FP_BITS);
         int32_t floorX = floatToFixed(camera.x + rowDistance * rayDirXLeft, TEXEL_FP_BITS);
         int32_t floorY = floatToFixed(camera.y + rowDistance * rayDirYLeft, TEXEL_FP_BITS);
         uint8_t lightness = uint8_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
-        uint32_t *dstFloor = frame.pixels + y * frame.width;
-        uint32_t *dstCeiling = frame.pixels + (frame.height - 1 - y) * frame.width;
+        uint32_t *dstFloor = frame.pixels + (frame.height - 1 - y) * frame.width;
+        uint32_t *dstCeiling = frame.pixels + y * frame.width;
         for (int32_t x = 0, nn = frame.width; x < nn; x++, dstFloor++, dstCeiling++) {
-            int32_t distX = floorX - (floorX >> TEXEL_FP_BITS), distY = floorY - (floorY >> TEXEL_FP_BITS);
+            int32_t distX = floorX - (floorX >> TEXEL_FP_BITS);
+            int32_t distY = floorY - (floorY >> TEXEL_FP_BITS);
 
             int32_t floorTx = fixedMultiply(floorWidth, distX, TEXEL_FP_BITS) & (floorWidth - 1);
             int32_t floorTy = fixedMultiply(floorHeight, distY, TEXEL_FP_BITS) & (floorHeight - 1);
@@ -366,24 +367,27 @@ void renderFloorAndCeiling(Renderer &renderer, Camera &camera, float lightDistan
     uint32_t *srcFloor =  renderer.floorTexture->pixels;
     uint32_t *srcCeiling =  renderer.ceilingTexture->pixels;
 
-    for (int32_t y = frameHalfHeight + 1, n = frame.height; y < n; y++) {
-        int32_t p = y - frameHalfHeight;
+    for (int32_t y = 0, n = frameHalfHeight + 1; y < n; y++) {
+        int32_t p = -(y - frameHalfHeight);
         float rowDistance = posZ / p;
         float floorStepX = rowDistance * floorScaleX;
         float floorStepY = rowDistance * floorScaleY;
         float floorX = camera.x + rowDistance * rayDirXLeft;
         float floorY = camera.y + rowDistance * rayDirYLeft;
         uint8_t lightness = uint8_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
-        uint32_t *dstFloor = frame.pixels + y * frame.width;
-        uint32_t *dstCeiling = frame.pixels + (frame.height - 1 - y) * frame.width;
+        uint32_t *dstFloor = frame.pixels + (frame.height - 1 - y) * frame.width;
+        uint32_t *dstCeiling = frame.pixels + y * frame.width;
         for (int32_t x = 0, nn = frame.width; x < nn; x++, dstFloor++, dstCeiling++) {
             float distX = floorX - float(int32_t(floorX)), distY = floorY - float(int32_t(floorY));
+
             int32_t floorTx = int32_t(floorWidth * distX) & (floorWidth - 1);
             int32_t floorTy = int32_t(floorHeight * distY) & (floorHeight - 1);
             *dstFloor = darken(srcFloor[floorTx + floorWidth * floorTy], lightness);
+
             int32_t ceilingTx = int32_t(ceilingWidth * distX) & (ceilingWidth - 1);
             int32_t ceilingTy = int32_t(ceilingHeight * distY) & (ceilingHeight - 1);
             *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
+
             floorX += floorStepX;
             floorY += floorStepY;
         }
@@ -405,7 +409,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
     }
 
-    for (int32_t x = 0; x < frame.width; x++) {
+    /*for (int32_t x = 0; x < frame.width; x++) {
         float rayX = camera.x, rayY = camera.y;
         float offset = ((float(x) * 2.0f / (float(frame.width) - 1.0f)) - 1.0f) * projectionPlaneWidth;
         float rayDirX = camDirX + offset * camRightX, rayDirY = camDirY + offset * camRightY;
@@ -445,5 +449,5 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         float x = xc - screenWidth / 2;
         float y = frameHalfHeight + halfUnitHeight - screenHeight;
         frame.drawImage(x, y, screenWidth, screenHeight, sprite->image, lightness, zbuffer, distance);
-    }
+    }*/
 }

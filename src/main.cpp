@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     // Camera camera(5.137084f, 8.366442f, 38.213917f, 66);
     // Camera camera(4.651269, 7.099933, -90.143478, 66);
     // Camera camera(7.469668f, 9.496275f, -16.77286f, 66);
-    Renderer renderer(resX, resY, textures, sizeof(textures) / sizeof(Image *), textures[1], textures[1]);
+    Renderer renderer(resX, resY, textures, sizeof(textures) / sizeof(Image *), textures[1], textures[2]);
 
     mfb_window *window = mfb_open_ex("lilray", resX * 2, resY * 2, WF_RESIZABLE);
     if (!window) return 0;
