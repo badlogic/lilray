@@ -86,6 +86,7 @@ FFI_EXPORT lilray_renderer lilray_renderer_create(int32_t width, int32_t height,
                                                   lilray_image ceiling_texture);
 FFI_EXPORT void lilray_renderer_dispose(lilray_renderer renderer);
 FFI_EXPORT lilray_image lilray_renderer_get_frame(lilray_renderer renderer);
-FFI_EXPORT void lilray_renderer_render(lilray_renderer renderer, lilray_camera camera, lilray_map map, lilray_sprite *sprites,
-                              int num_sprites, float light_distance);
+FFI_EXPORT void
+lilray_renderer_render(lilray_renderer renderer, lilray_camera camera, lilray_map map, lilray_sprite *sprites,
+                       int num_sprites, float light_distance);
 #endif
