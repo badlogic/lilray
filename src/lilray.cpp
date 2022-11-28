@@ -405,7 +405,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         // renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
     }
 
-    /*for (int32_t x = 0; x < frame.width; x++) {
+    for (int32_t x = 0; x < frame.width; x++) {
         float rayX = camera.x, rayY = camera.y;
         float offset = ((float(x) * 2.0f / (float(frame.width) - 1.0f)) - 1.0f) * projectionPlaneWidth;
         float rayDirX = camDirX + offset * camRightX, rayDirY = camDirY + offset * camRightY;
@@ -445,5 +445,5 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
         float x = xc - screenWidth / 2;
         float y = frameHalfHeight + halfUnitHeight - screenHeight;
         frame.drawImage(x, y, screenWidth, screenHeight, sprite->image, lightness, zbuffer, distance);
-    }*/
+    }
 }
