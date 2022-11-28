@@ -235,10 +235,12 @@ void subPixelQuad() {
 
         // TODO z-test & optimization
         if (minX < 0) {
+            // This isn't accurate, would need to take into account minX fractional part
             tx = -fixedToInt(minX, fpBits) * txStep;
             minX = 0;
         }
         if (minY < 0) {
+            // This isn't accurate, would need to take into account minY fractional part
             ty = -fixedToInt(minY, fpBits) * tyStep;
             minY = 0;
         }
