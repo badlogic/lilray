@@ -50,20 +50,35 @@ drawTriangleInt(Image &frame, int32_t x0, int32_t y0, int32_t x1, int32_t y1, in
     }
 }
 
-int32_t toFixed(float v, int32_t bits) {
+static inline int32_t floatToFixed(float v, int32_t bits) {
     return int32_t(v * (1 << bits));
 }
 
+static inline float fixedToFloat(int32_t v, int32_t bits) {
+    return float(v >> bits);
+}
+
+static inline int32_t fixedToInt(int32_t v, int32_t bits) {
+    return v >> bits;
+}
+
+static inline int32_t fixedRound(int32_t v, int32_t bits) {
+    int32_t fpOne = (1 << bits);
+    int32_t subMask = fpOne - 1;
+    return (v + subMask) & ~subMask;
+}
+
 void
-drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, float x2f, float y2f, uint32_t color, int32_t fpBits) {
+drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, float x2f, float y2f, uint32_t color,
+                     int32_t fpBits) {
     int32_t subStep = 1 << fpBits;
     int32_t subMask = subStep - 1;
-    int32_t x0 = toFixed(x0f, fpBits);
-    int32_t y0 = toFixed(y0f, fpBits);
-    int32_t x1 = toFixed(x1f, fpBits);
-    int32_t y1 = toFixed(y1f, fpBits);
-    int32_t x2 = toFixed(x2f, fpBits);
-    int32_t y2 = toFixed(y2f, fpBits);
+    int32_t x0 = floatToFixed(x0f, fpBits);
+    int32_t y0 = floatToFixed(y0f, fpBits);
+    int32_t x1 = floatToFixed(x1f, fpBits);
+    int32_t y1 = floatToFixed(y1f, fpBits);
+    int32_t x2 = floatToFixed(x2f, fpBits);
+    int32_t y2 = floatToFixed(y2f, fpBits);
 
     int32_t minX = min3(x0, x1, x2);
     int32_t minY = min3(y0, y1, y2);
@@ -72,8 +87,8 @@ drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, f
 
     minX = max(minX, 0);
     minY = max(minY, 0);
-    maxX = min(maxX, toFixed(frame.width - 1, fpBits));
-    maxY = min(maxY, toFixed(frame.height - 1, fpBits));
+    maxX = min(maxX, floatToFixed(frame.width - 1, fpBits));
+    maxY = min(maxY, floatToFixed(frame.height - 1, fpBits));
 
     minX = (minX + subMask) & ~subMask;
     minY = (minY + subMask) & ~subMask;
@@ -132,18 +147,20 @@ struct Triangle {
     }
 };
 
-int main(int argc, char **argv) {
+void subPixelTriangles() {
     const int resX = 320, resY = 128;
     const int resScale = 4;
     Image frame(resX, resY);
-    mfb_window *window = mfb_open_ex("lilray", resX * resScale, resY * resScale, WF_RESIZABLE);
-    if (!window) return 0;
+    mfb_window *window = mfb_open_ex("sub-pixel triangles", resX * resScale, resY * resScale, WF_RESIZABLE);
+    if (!window) return;
     mfb_timer *deltaTimer = mfb_timer_create();
 
     Triangle tri(-32, 32, 0, -32, 32, 8);
     do {
         float delta = mfb_timer_delta(deltaTimer);
         frame.clear(0x0);
+
+        // Triangle rasterizer test
         tri.rotate(delta * 5);
         tri.translate(40, resY / 2);
         drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 0);
@@ -154,6 +171,98 @@ int main(int argc, char **argv) {
         tri.translate(resX / 4, 0);
         drawTriangleSubPixel(frame, tri.p0.x, tri.p0.y, tri.p1.x, tri.p1.y, tri.p2.x, tri.p2.y, 0xffff0000, 8);
         tri.translate(-resX / 4 * 3 - 40, -resY / 2);
+
         if (mfb_update_ex(window, frame.pixels, resX, resY) < 0) break;
     } while (true);
+}
+
+void subPixelQuad() {
+    const int resX = 320, resY = 240;
+    const int resScale = 2;
+    Image frame(resX, resY);
+    mfb_window *window = mfb_open_ex("sub-pixel rectangles", resX * resScale, resY * resScale, WF_RESIZABLE);
+    if (!window) return;
+    mfb_timer *deltaTimer = mfb_timer_create();
+
+    uint32_t b = 0xff000000;
+    uint32_t w = 0xffffffff;
+    uint32_t checkers[] = {
+            b, w, b, w, b, w, b, w,
+            w, b, w, b, w, b, w, b,
+            b, w, b, w, b, w, b, w,
+            w, b, w, b, w, b, w, b,
+            b, w, b, w, b, w, b, w,
+            w, b, w, b, w, b, w, b,
+            b, w, b, w, b, w, b, w,
+            w, b, w, b, w, b, w, b,
+    };
+    // Image sprite(8, 8, checkers);
+    Image sprite("grunt.png");
+    float objZ = 4, camZ = 0, camDirZ = 1;
+    int32_t fpBits = 8;
+    int32_t fpOne = 1 << fpBits;
+    do {
+        float delta = mfb_timer_delta(deltaTimer);
+        frame.clear(0xffcccccc);
+        camZ += camDirZ * delta;
+        float distance = objZ - camZ;
+        if (distance < 0.1) {
+            camZ = objZ - 0.1;
+            camDirZ *= -1;
+            continue;
+        }
+        if (camZ < 0) {
+            camZ = 0;
+            camDirZ *= -1;
+        }
+
+        float projectedHeight = resY * 0.5f / distance;
+        float projectedWidth = projectedHeight * (float(sprite.width) / float(sprite.height));
+        int32_t minX = floatToFixed(resX * 0.5f - projectedWidth * 0.5f, fpBits);
+        int32_t minY = floatToFixed(resY * 0.5f - projectedHeight * 0.5f, fpBits);
+        int32_t maxX = floatToFixed(resX * 0.5f + projectedWidth * 0.5f, fpBits);
+        int32_t maxY = floatToFixed(resY * 0.5f + projectedHeight * 0.5f, fpBits);
+        int32_t tx = 0, ty = 0;
+
+        minX = fixedRound(minX, fpBits);
+        minY = fixedRound(minY, fpBits);
+
+        int32_t w = fixedToInt(fixedRound(maxX - minX + 1, fpBits), fpBits);
+        int32_t h = fixedToInt(fixedRound(maxY - minY + 1, fpBits), fpBits);
+
+        int32_t txStep = floatToFixed(sprite.width / float(w), 16);
+        int32_t tyStep = floatToFixed(sprite.height / float(h), 16);
+
+        // TODO z-test & optimization
+        if (minX < 0) {
+            tx = -fixedToInt(minX, fpBits) * txStep;
+            minX = 0;
+        }
+        if (minY < 0) {
+            ty = -fixedToInt(minY, fpBits) * tyStep;
+            minY = 0;
+        }
+        if (maxX >= floatToFixed(resX, fpBits)) maxX = floatToFixed(resX - 1, fpBits);
+        if (maxY >= floatToFixed(resY, fpBits)) maxY = floatToFixed(resY - 1, fpBits);
+
+        int32_t px, py, ptx, pty;
+        for (py = minY, pty = ty; py <= maxY; py += fpOne, pty += tyStep) {
+            int32_t yOffset = fixedToInt(py, fpBits) * frame.width;
+            int32_t vOffset = fixedToInt(pty, 16) * sprite.width;
+            for (px = minX, ptx = tx; px <= maxX; px += fpOne, ptx += txStep) {
+                int32_t x = fixedToInt(px, fpBits);
+                int32_t u = fixedToInt(ptx, 16);
+                uint32_t color = sprite.pixels[u + vOffset];
+                if (!color) continue;
+                frame.pixels[x + yOffset] = color;
+            }
+        }
+
+        if (mfb_update_ex(window, frame.pixels, resX, resY) < 0) break;
+    } while (true);
+}
+
+int main(int argc, char **argv) {
+    // subPixelTriangles();
+    subPixelQuad();
 }
