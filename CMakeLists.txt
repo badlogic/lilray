@@ -6,6 +6,11 @@ set(CMAKE_C_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+#if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+#    set(CMAKE_OSX_ARCHITECTURES x86_64)
+#    set(ONLY_ACTIVE_ARCH NO)
+#endif()
+
 include(FetchContent)
 FetchContent_Declare(minifb GIT_REPOSITORY https://github.com/emoon/minifb)
 FetchContent_MakeAvailable(minifb)
