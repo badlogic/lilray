@@ -319,6 +319,8 @@ void renderFloorAndCeilingSubPixel(Renderer &renderer, Camera &camera, float lig
     int32_t ceilingHeight = renderer.ceilingTexture->height;
     uint32_t *srcFloor = renderer.floorTexture->pixels;
     uint32_t *srcCeiling = renderer.ceilingTexture->pixels;
+    uint32_t *dstFloor = frame.pixels + (frame.height - 1) * frame.width;
+    uint32_t *dstCeiling = frame.pixels;
     for (int32_t y = 0, n = frameHalfHeight + 1; y < n; y++) {
         int32_t p = -(y - frameHalfHeight);
         float rowDistance = posZ / float(p);
@@ -327,23 +329,19 @@ void renderFloorAndCeilingSubPixel(Renderer &renderer, Camera &camera, float lig
         int32_t floorX = floatToFixed(camera.x + rowDistance * rayDirXLeft, TEXEL_FP_BITS);
         int32_t floorY = floatToFixed(camera.y + rowDistance * rayDirYLeft, TEXEL_FP_BITS);
         uint8_t lightness = uint8_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
-        uint32_t *dstFloor = frame.pixels + (frame.height - 1 - y) * frame.width;
-        uint32_t *dstCeiling = frame.pixels + y * frame.width;
         for (int32_t x = 0, nn = frame.width; x < nn; x++, dstFloor++, dstCeiling++) {
-            int32_t distX = floorX - (floorX >> TEXEL_FP_BITS);
-            int32_t distY = floorY - (floorY >> TEXEL_FP_BITS);
-
-            int32_t floorTx = fixedMultiply(floorWidth, distX, TEXEL_FP_BITS) & (floorWidth - 1);
-            int32_t floorTy = fixedMultiply(floorHeight, distY, TEXEL_FP_BITS) & (floorHeight - 1);
+            int32_t floorTx = fixedMultiply(floorWidth, floorX, TEXEL_FP_BITS) & (floorWidth - 1);
+            int32_t floorTy = fixedMultiply(floorHeight, floorY, TEXEL_FP_BITS) & (floorHeight - 1);
             *dstFloor = darken(srcFloor[floorTx + floorWidth * floorTy], lightness);
 
-            int32_t ceilingTx = fixedMultiply(ceilingWidth, distX, TEXEL_FP_BITS) & (ceilingWidth - 1);
-            int32_t ceilingTy = fixedMultiply(ceilingHeight, distY, TEXEL_FP_BITS) & (ceilingHeight - 1);
+            int32_t ceilingTx = fixedMultiply(ceilingWidth, floorX, TEXEL_FP_BITS) & (ceilingWidth - 1);
+            int32_t ceilingTy = fixedMultiply(ceilingHeight, floorY, TEXEL_FP_BITS) & (ceilingHeight - 1);
             *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
 
             floorX += floorStepX;
             floorY += floorStepY;
         }
+        dstFloor -= frame.width << 1;
     }
 }
 
@@ -366,7 +364,8 @@ void renderFloorAndCeiling(Renderer &renderer, Camera &camera, float lightDistan
     int32_t ceilingHeight =  renderer.ceilingTexture->height;
     uint32_t *srcFloor =  renderer.floorTexture->pixels;
     uint32_t *srcCeiling =  renderer.ceilingTexture->pixels;
-
+    uint32_t *dstFloor = frame.pixels + (frame.height - 1) * frame.width;
+    uint32_t *dstCeiling = frame.pixels;
     for (int32_t y = 0, n = frameHalfHeight + 1; y < n; y++) {
         int32_t p = -(y - frameHalfHeight);
         float rowDistance = posZ / p;
@@ -375,22 +374,19 @@ void renderFloorAndCeiling(Renderer &renderer, Camera &camera, float lightDistan
         float floorX = camera.x + rowDistance * rayDirXLeft;
         float floorY = camera.y + rowDistance * rayDirYLeft;
         uint8_t lightness = uint8_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
-        uint32_t *dstFloor = frame.pixels + (frame.height - 1 - y) * frame.width;
-        uint32_t *dstCeiling = frame.pixels + y * frame.width;
         for (int32_t x = 0, nn = frame.width; x < nn; x++, dstFloor++, dstCeiling++) {
-            float distX = floorX - float(int32_t(floorX)), distY = floorY - float(int32_t(floorY));
-
-            int32_t floorTx = int32_t(floorWidth * distX) & (floorWidth - 1);
-            int32_t floorTy = int32_t(floorHeight * distY) & (floorHeight - 1);
+            int32_t floorTx = int32_t(floorWidth * floorX) & (floorWidth - 1);
+            int32_t floorTy = int32_t(floorHeight * floorY) & (floorHeight - 1);
             *dstFloor = darken(srcFloor[floorTx + floorWidth * floorTy], lightness);
 
-            int32_t ceilingTx = int32_t(ceilingWidth * distX) & (ceilingWidth - 1);
-            int32_t ceilingTy = int32_t(ceilingHeight * distY) & (ceilingHeight - 1);
+            int32_t ceilingTx = int32_t(ceilingWidth * floorX) & (ceilingWidth - 1);
+            int32_t ceilingTy = int32_t(ceilingHeight * floorY) & (ceilingHeight - 1);
             *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
 
             floorX += floorStepX;
             floorY += floorStepY;
         }
+        dstFloor -= frame.width << 1;
     }
 }
 
@@ -405,8 +401,8 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
     for (int i = 0; i < frame.width; i++) zbuffer[i] = INFINITY;
 
     if (floorTexture && ceilingTexture) {
-        // renderFloorAndCeiling(*this, camera, lightDistance);
-        renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
+        renderFloorAndCeiling(*this, camera, lightDistance);
+        // renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
     }
 
     /*for (int32_t x = 0; x < frame.width; x++) {
