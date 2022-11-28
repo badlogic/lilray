@@ -21,6 +21,8 @@
         <div id="left">←</div>
         <div id="right">→</div>
     </div>
+    <div>or WASD</div>
+    <div id="frametime"></div>
 </div>
 </body>
 <script>
@@ -116,7 +118,9 @@
 
         let grunt = await loadImage("assets/grunt.png");
         let sprites = [
-            lib._lilray_sprite_create(4.5, 2.5, 0.7, grunt)
+            lib._lilray_sprite_create(4.5, 2.5, 0.7, grunt),
+            lib._lilray_sprite_create(4.5, 1.5, 0.7, grunt),
+            lib._lilray_sprite_create(5.5, 2.0, 0.7, grunt)
         ];
         let spritesPtr = lib._malloc(sprites.length * 4);
         lib.HEAPU32.set(sprites, spritesPtr / 4);
@@ -136,7 +140,10 @@
             if (keyA) lib._lilray_camera_rotate(camera, -rotationSpeed * delta);
             if (keyD) lib._lilray_camera_rotate(camera, rotationSpeed * delta);
             lib._lilray_renderer_render(renderer, camera, map, spritesPtr, sprites.length, 6);
+            let start = Date.now();
             let frame = lib._lilray_renderer_get_frame(renderer);
+            let frameTime = Date.now() - start;
+            document.getElementById("frametime").textContent = frameTime + " ms";
             lib._lilray_image_to_rgba(frame);
             let framePixels = new Uint8ClampedArray(lib.HEAPU8.buffer, lib._lilray_image_get_pixels(frame), resX * resY * 4);
             let imageData = new ImageData(framePixels, resX, resY);
