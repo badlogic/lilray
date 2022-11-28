@@ -204,6 +204,8 @@ void subPixelQuad() {
     do {
         float delta = mfb_timer_delta(deltaTimer);
         frame.clear(0xffcccccc);
+
+        // Move camera to/away from sprite
         camZ += camDirZ * delta;
         float distance = objZ - camZ;
         if (distance < 0.1) {
@@ -216,24 +218,31 @@ void subPixelQuad() {
             camDirZ *= -1;
         }
 
+        // Project sprite dimensions from camera space to screen space based on distance
+        // camera -> sprite. Sprite is assumed to have unit height in world/camera space.
         float projectedHeight = resY * 0.5f / distance;
         float projectedWidth = projectedHeight * (float(sprite.width) / float(sprite.height));
+
+        // Calculate sub pixel accurate screen coordinates of screen aligned sprite billboard
         int32_t minX = floatToFixed(resX * 0.5f - projectedWidth * 0.5f, fpBits);
         int32_t minY = floatToFixed(resY * 0.5f - projectedHeight * 0.5f, fpBits);
         int32_t maxX = floatToFixed(resX * 0.5f + projectedWidth * 0.5f, fpBits);
         int32_t maxY = floatToFixed(resY * 0.5f + projectedHeight * 0.5f, fpBits);
         int32_t tx = 0, ty = 0;
 
+        // Round top/left corner coordinate -> stabilizes rectangle on screen
+        // Comment to see effect.
         minX = fixedRound(minX, fpBits);
         minY = fixedRound(minY, fpBits);
 
+        // Calculate texture x/y gradients based on rounded screen width and height
+        // of rectangle -> stabilized texture point sampling.
         int32_t w = fixedToInt(fixedRound(maxX - minX + 1, fpBits), fpBits);
         int32_t h = fixedToInt(fixedRound(maxY - minY + 1, fpBits), fpBits);
-
         int32_t txStep = floatToFixed(sprite.width / float(w), 16);
         int32_t tyStep = floatToFixed(sprite.height / float(h), 16);
 
-        // TODO z-test & optimization
+        // Clip rectangle (and texture sampling start coordinates)
         if (minX < 0) {
             // This isn't accurate, would need to take into account minX fractional part
             tx = -fixedToInt(minX, fpBits) * txStep;
@@ -247,6 +256,8 @@ void subPixelQuad() {
         if (maxX >= floatToFixed(resX, fpBits)) maxX = floatToFixed(resX - 1, fpBits);
         if (maxY >= floatToFixed(resY, fpBits)) maxY = floatToFixed(resY - 1, fpBits);
 
+        // Draw the clipped rectangle. Texel color of 0x00000000 -> transparent
+        // TODO z-test & optimization
         int32_t px, py, ptx, pty;
         for (py = minY, pty = ty; py <= maxY; py += fpOne, pty += tyStep) {
             int32_t yOffset = fixedToInt(py, fpBits) * frame.width;
