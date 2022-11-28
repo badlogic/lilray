@@ -4,6 +4,8 @@
 #include <cstdint>
 
 namespace lilray {
+    struct Sprite;
+
     struct Image {
         int32_t width, height;
         uint32_t *pixels;
@@ -26,7 +28,10 @@ namespace lilray {
                                     uint8_t lightness);
 
         void drawVerticalImageSliceAlpha(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
-                                    uint8_t lightness);
+                                         uint8_t lightness);
+
+        void drawImage(float x, float y, float scaledWidth, float scaledHeight, Image *image, uint8_t lightness,
+                       float *zbuffer, float distance);
 
         void toRgba();
     };

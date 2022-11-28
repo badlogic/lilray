@@ -50,24 +50,6 @@ drawTriangleInt(Image &frame, int32_t x0, int32_t y0, int32_t x1, int32_t y1, in
     }
 }
 
-static inline int32_t floatToFixed(float v, int32_t bits) {
-    return int32_t(v * (1 << bits));
-}
-
-static inline float fixedToFloat(int32_t v, int32_t bits) {
-    return float(v >> bits);
-}
-
-static inline int32_t fixedToInt(int32_t v, int32_t bits) {
-    return v >> bits;
-}
-
-static inline int32_t fixedRound(int32_t v, int32_t bits) {
-    int32_t fpOne = (1 << bits);
-    int32_t subMask = fpOne - 1;
-    return (v + subMask) & ~subMask;
-}
-
 void
 drawTriangleSubPixel(Image &frame, float x0f, float y0f, float x1f, float y1f, float x2f, float y2f, uint32_t color,
                      int32_t fpBits) {

@@ -44,7 +44,9 @@ int main(int argc, char **argv) {
     Map map(21, 21, cells);
     Image grunt("grunt.png");
     Sprite *sprites[] = {
-            new Sprite(7.5f, 9.5f, 0.7f, &grunt),
+            new Sprite(3.5f, 2.5f, 0.7f, &grunt),
+            new Sprite(4.5f, 1.5f, 0.7f, &grunt),
+            new Sprite(5.5f, 2.0f, 0.7f, &grunt),
             //new Sprite(7.5f, 1.5f, 0.7f, &grunt),
             //new Sprite(1.5f, 1.5f, 0.7f, &grunt)
     };
