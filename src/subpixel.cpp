@@ -260,14 +260,14 @@ void subPixelQuad() {
         // TODO z-test & optimization
         int32_t px, py, ptx, pty;
         for (py = minY, pty = ty; py <= maxY; py += fpOne, pty += tyStep) {
-            int32_t yOffset = fixedToInt(py, fpBits) * frame.width;
-            int32_t vOffset = fixedToInt(pty, 16) * sprite.width;
+            uint32_t *dst = frame.pixels + fixedToInt(py, fpBits) * frame.width;
+            uint32_t *src = sprite.pixels + fixedToInt(pty, 16) * sprite.width;
             for (px = minX, ptx = tx; px <= maxX; px += fpOne, ptx += txStep) {
                 int32_t x = fixedToInt(px, fpBits);
                 int32_t u = fixedToInt(ptx, 16);
-                uint32_t color = sprite.pixels[u + vOffset];
+                uint32_t color = src[u];
                 if (!color) continue;
-                frame.pixels[x + yOffset] = color;
+                dst[x] = color;
             }
         }
 
