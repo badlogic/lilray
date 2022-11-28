@@ -433,7 +433,7 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
 
     if (floorTexture && ceilingTexture) {
         renderFloorAndCeiling(*this, camera, lightDistance);
-        renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
+        // renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
     }
 
     for (int32_t x = 0; x < frame.width; x++) {
