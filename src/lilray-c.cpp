@@ -53,7 +53,7 @@ lilray_image_draw_vertical_line(lilray_image image, int32_t x, int32_t y_start, 
 
 void lilray_image_to_rgba(lilray_image image) {
     if (!image) return;
-    ((Image *) image)->toRgba();
+    ((Image *) image)->reverseColorChannels();
 }
 
 lilray_map lilray_map_create(int32_t width, int32_t height, int32_t *cells) {

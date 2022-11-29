@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
 
     lilray_image image = lilray_image_create_from_file("./wolftextures.png");
     lilray_image textures[] = {
-            lilray_image_create_from_file("nyan.png"), //lilray_image_get_region(image, 64, 0, 64, 64),
+            lilray_image_get_region(image, 64, 0, 64, 64),
             lilray_image_get_region(image, 128, 0, 64, 64),
             lilray_image_get_region(image, 192, 0, 64, 64),
             lilray_image_get_region(image, 256, 0, 64, 64),
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     };
-    lilray_image grunt = lilray_image_create_from_file("nyan.png");
+    lilray_image grunt = lilray_image_create_from_file("grunt.png");
     lilray_sprite sprites[] = {
             lilray_sprite_create(7.5, 2.5, 0.7, grunt)
     };

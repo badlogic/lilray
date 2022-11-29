@@ -14,7 +14,6 @@ using namespace lilray;
 #define PIXEL_FP_BITS 6
 #define PIXEL_FP_ONE (1 << 6)
 #define TEXEL_FP_BITS 16
-#define TEXEL_FP_ONE (1 << 16)
 #define FLOOR_FP_BITS 13
 
 static inline float signum(float v) {
@@ -25,19 +24,6 @@ static inline uint32_t darken(uint32_t color, uint8_t lightness) {
     uint64_t expand = (((uint64_t) color) << 32) | color;
     uint64_t x = (((expand & 0x0000FF0000FF00FF) * lightness) >> 8) & 0x0000FF0000FF00FF;
     return (uint32_t) ((x >> 32) | x) | (color & 0xFF000000);
-}
-
-static inline void argb_to_rgba(uint32_t *argb, uint32_t *rgba, int32_t numPixels) {
-    numPixels <<= 2;
-    uint8_t *src = (uint8_t *) argb;
-    uint8_t *dst = (uint8_t *) rgba;
-    for (size_t i = 0; i < numPixels; i += 4) {
-        uint8_t b = src[i], g = src[i + 1], r = src[i + 2], a = src[i + 3];
-        dst[i] = r;
-        dst[i + 1] = g;
-        dst[i + 2] = b;
-        dst[i + 3] = a;
-    }
 }
 
 static inline float distance(float x1, float y1, float x2, float y2) {
@@ -72,14 +58,14 @@ static inline int32_t fixedMultiply(int32_t a, int32_t b, int32_t bits) {
     return int32_t((int64_t(a) * int64_t(b)) >> bits);
 }
 
-Image::Image(const char *file) {
-    pixels = (uint32_t *) stbi_load(file, &width, &height, nullptr, 4);
-    argb_to_rgba(pixels, pixels, width * height);
+Image::Image(const char *imageFile) {
+    pixels = (uint32_t *) stbi_load(imageFile, &width, &height, nullptr, 4);
+    reverseColorChannels();
 }
 
-Image::Image(uint8_t *bytes, int32_t num_bytes) {
-    pixels = (uint32_t *) stbi_load_from_memory(bytes, num_bytes, &width, &height, nullptr, 4);
-    argb_to_rgba(pixels, pixels, width * height);
+Image::Image(uint8_t *imageBytes, int32_t numBytes) {
+    pixels = (uint32_t *) stbi_load_from_memory(imageBytes, numBytes, &width, &height, nullptr, 4);
+    reverseColorChannels();
 }
 
 Image::Image(int32_t width, int32_t height, const uint32_t *pixels) : width(width), height(height) {
@@ -126,7 +112,7 @@ void Image::drawVerticalLine(int32_t x, int32_t ys, int32_t ye, uint32_t color) 
     }
 }
 
-void Image::drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
+void Image::drawVerticalImageSlice(Image &texture, int32_t x, int32_t ys, int32_t ye, int32_t tx,
                                    uint8_t lightness) {
     if (x < 0 || x >= width) return;
     if (tx < 0 || tx >= texture.width) return;
@@ -152,28 +138,51 @@ void Image::drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &tex
     }
 }
 
-void Image::drawImage(float x, float y, float scaledWidth, float scaledHeight, Image *image, uint8_t lightness,
-                      float *zbuffer, float distance) {
-// Calculate sub pixel accurate screen coordinates of screen aligned sprite billboard
+void Image::drawRectangle(int32_t x, int32_t y, int32_t w, int32_t h, uint32_t color) {
+    // Calculate top/left and bottom/right corner
+    int32_t dx = x;
+    int32_t dy = y;
+    int32_t dx2 = dx + w - 1;
+    int32_t dy2 = dy + h - 1;
+
+    // Clip
+    if (dx < 0) dx = 0;
+    if (dy < 0) dy = 0;
+    if (dx2 >= width) dx2 = width - 1;
+    if (dy2 >= height) dy2 = height - 1;
+
+    // Draw
+    uint32_t *dst = pixels + dx + dy * width;
+    uint32_t dstPitch = width - (dx2 - dx) - 1;
+    for (; dy <= dy2; dy++, dst += dstPitch) {
+        for (int32_t rx = dx; rx <= dx2; rx++, dst++) {
+            *dst = color;
+        }
+    }
+}
+
+void drawSprite(Image *frame, Image *sprite, float x, float y, float scaledWidth, float scaledHeight, uint8_t lightness,
+                const float *zbuffer, float distance) {
+    // Calculate sub pixel accurate screen coordinates of screen aligned sprite
     int32_t minX = floatToFixed(x, PIXEL_FP_BITS);
     int32_t minY = floatToFixed(y, PIXEL_FP_BITS);
     int32_t maxX = floatToFixed(x + scaledWidth, PIXEL_FP_BITS);
     int32_t maxY = floatToFixed(y + scaledHeight, PIXEL_FP_BITS);
     int32_t tx = 0, ty = 0;
 
-    // Round top/left corner coordinate -> stabilizes rectangle on screen
+    // Round top/left corner coordinate -> stabilizes sprite on screen
     // Comment to see effect.
     minX = fixedRound(minX, PIXEL_FP_BITS);
     minY = fixedRound(minY, PIXEL_FP_BITS);
 
     // Calculate texture x/y gradients based on rounded screen width and height
-    // of rectangle -> stabilized texture point sampling.
+    // of rectangle -> stabilizes texture point sampling.
     int32_t w = fixedToInt(fixedRound(maxX - minX + 1, PIXEL_FP_BITS), PIXEL_FP_BITS);
     int32_t h = fixedToInt(fixedRound(maxY - minY + 1, PIXEL_FP_BITS), PIXEL_FP_BITS);
-    int32_t txStep = floatToFixed(image->width / float(w), TEXEL_FP_BITS);
-    int32_t tyStep = floatToFixed(image->height / float(h), TEXEL_FP_BITS);
+    int32_t txStep = floatToFixed(sprite->width / float(w), TEXEL_FP_BITS);
+    int32_t tyStep = floatToFixed(sprite->height / float(h), TEXEL_FP_BITS);
 
-    // Clip rectangle (and texture sampling start coordinates)
+    // Clip rectangle and texture coordinates
     if (minX < 0) {
         // This isn't accurate, would need to take into account minX fractional part
         tx = -fixedToInt(minX, PIXEL_FP_BITS) * txStep;
@@ -184,16 +193,16 @@ void Image::drawImage(float x, float y, float scaledWidth, float scaledHeight, I
         ty = -fixedToInt(minY, PIXEL_FP_BITS) * tyStep;
         minY = 0;
     }
-    if (maxX >= floatToFixed(width, PIXEL_FP_BITS)) maxX = floatToFixed(width - 1, PIXEL_FP_BITS);
-    if (maxY >= floatToFixed(height, PIXEL_FP_BITS)) maxY = floatToFixed(height - 1, PIXEL_FP_BITS);
+    if (maxX >= floatToFixed(frame->width, PIXEL_FP_BITS)) maxX = floatToFixed(frame->width - 1, PIXEL_FP_BITS);
+    if (maxY >= floatToFixed(frame->height, PIXEL_FP_BITS)) maxY = floatToFixed(frame->height - 1, PIXEL_FP_BITS);
 
     // Draw the clipped rectangle. Texel color of 0x00000000 -> transparent
     int32_t px, py, ptx, pty;
     for (py = minY, pty = ty; py <= maxY; py += PIXEL_FP_ONE, pty += tyStep) {
         int32_t y = fixedToInt(py, PIXEL_FP_BITS);
         int32_t v = fixedToInt(pty, TEXEL_FP_BITS);
-        uint32_t *dst = pixels + y * width;
-        uint32_t *src = image->pixels + v * image->width;
+        uint32_t *dst = frame->pixels + y * frame->width;
+        uint32_t *src = sprite->pixels + v * sprite->width;
         for (px = minX, ptx = tx; px <= maxX; px += PIXEL_FP_ONE, ptx += txStep) {
             int32_t x = fixedToInt(px, PIXEL_FP_BITS);
             if (zbuffer[x] < distance) continue;
@@ -205,8 +214,141 @@ void Image::drawImage(float x, float y, float scaledWidth, float scaledHeight, I
     }
 }
 
-void Image::toRgba() {
-    argb_to_rgba(pixels, pixels, width * height);
+void Image::drawText(Font &font, int32_t x, int32_t y, uint32_t color, const char *fmt, ...) {
+    char text[1024];
+    va_list args;
+    va_start (args, fmt);
+    vsnprintf(text, 1024, fmt, args);
+    va_end (args);
+
+    int32_t lineX = x;
+    int32_t lineY = y;
+    char *textPtr = text;
+    while (*textPtr) {
+        char c = *textPtr;
+        textPtr++;
+
+        // Handle newline
+        if (c == '\n') {
+            lineX = x;
+            lineY += font.charHeight;
+            continue;
+        }
+
+        // Check if char is entirely outside of image
+        if (lineX + font.charWidth < 0) continue;
+        if (lineX >= width) continue;
+        if (lineY + font.charHeight < 0) continue;
+        if (lineY >= height) break; // Line is "below" screen, exit
+
+        // Check if char is contained in font
+        char sc = c;
+        c -= ' ';
+        if (c < 0) continue;
+        if (c > font.charsX * font.charsY - 1) continue;
+
+        // Calculate char offset in font image
+        int32_t cx = (c % font.charsX);
+        int32_t cy = (c - cx) / font.charsX;
+        cx *= font.charWidth;
+        cy *= font.charHeight;
+
+        // Calculate destination rectangle
+        int32_t dx = lineX;
+        int32_t dy = lineY;
+        int32_t dx2 = dx + font.charWidth - 1;
+        int32_t dy2 = dy + font.charHeight - 1;
+
+        // Clip destination rectangle and char offset
+        if (dx < 0) {
+            cx -= dx;
+            dx = 0;
+        }
+        if (dy < 0) {
+            cy -= dy;
+            dy = 0;
+        }
+        if (dx2 >= width) dx2 = width - 1;
+        if (dy2 >= height) dy2 = height - 1;
+
+        // Draw
+        uint8_t *src = font.pixels + cx + cy * font.width;
+        uint32_t srcPitch = font.width - (dx2 - dx) - 1;
+        uint32_t *dst = pixels + dx + dy * width;
+        uint32_t dstPitch = width - (dx2 - dx) - 1;
+        for (; dy <= dy2; dy++) {
+            for (int32_t rx = dx; rx <= dx2; rx++, dst++, src++) {
+                if (!*src) continue;
+                *dst = color;
+            }
+            dst += dstPitch;
+            src += srcPitch;
+        }
+
+        lineX += font.charWidth;
+    }
+}
+
+void Image::reverseColorChannels() {
+    int32_t numPixels = (width * height) << 2;
+    uint8_t *src = (uint8_t *) pixels;
+    uint8_t *dst = (uint8_t *) pixels;
+    for (size_t i = 0; i < numPixels; i += 4) {
+        uint8_t b = src[i], g = src[i + 1], r = src[i + 2], a = src[i + 3];
+        dst[i] = r;
+        dst[i + 1] = g;
+        dst[i + 2] = b;
+        dst[i + 3] = a;
+    }
+}
+
+Font::Font(const char *imageFile, int32_t charWidth, int32_t charHeight) :
+        charWidth(charWidth), charHeight(charHeight) {
+    pixels = (uint8_t *) stbi_load(imageFile, &width, &height, nullptr, 1);
+    charsX = width / charWidth;
+    charsY = height / charHeight;
+}
+
+Font::Font(uint8_t *imageBytes, int32_t numBytes, int32_t charWidth, int32_t charHeight) :
+        charWidth(charWidth), charHeight(charHeight) {
+    pixels = (uint8_t *) stbi_load_from_memory(imageBytes, numBytes, &width, &height, nullptr, 1);
+    charsX = width / charWidth;
+    charsY = height / charHeight;
+}
+
+void Font::getBounds(int32_t &width, int32_t &height, const char *fmt, ...) {
+    char text[1024];
+    va_list args;
+    va_start (args, fmt);
+    vsnprintf(text, 256, fmt, args);
+    va_end (args);
+
+    int32_t maxWidth = 0;
+    int32_t lineWidth = 0;
+    int32_t maxHeight = charHeight;
+    char *textPtr = text;
+    while (*textPtr) {
+        char c = *textPtr;
+        textPtr++;
+
+        // Handle newline
+        if (c == '\n') {
+            maxWidth = lineWidth > maxWidth ? lineWidth : maxWidth;
+            lineWidth = 0;
+            maxHeight += charHeight;
+            continue;
+        }
+
+        // Check if char is contained in font
+        char sc = c;
+        c -= ' ';
+        if (c < 0) continue;
+        if (c > charsX * charsY - 1) continue;
+
+        lineWidth += charWidth;
+    }
+    width = maxWidth > lineWidth ? maxWidth : lineWidth;
+    height = width > 0 ? maxHeight : 0;
 }
 
 Map::Map(int32_t width, int32_t height, int32_t *cells) : width(width), height(height) {
@@ -230,6 +372,7 @@ int32_t Map::getCell(int x, int y) {
 
 int32_t Map::raycast(float rayX, float rayY, float rayDirX, float rayDirY, float maxDistance, float &hitX, float &hitY,
                      float &distance) {
+    // DDA implementation moving along grid intersections.
     float rayStepX = sqrtf(1 + (rayDirY / rayDirX) * (rayDirY / rayDirX));
     float rayStepY = sqrtf(1 + (rayDirX / rayDirY) * (rayDirX / rayDirY));
     int mapX = int(rayX), mapY = int(rayY), mapStepX, mapStepY;
@@ -298,10 +441,11 @@ void Camera::rotate(float degrees) {
 Renderer::Renderer(int32_t width, int32_t height, Image **wallTextures, int numWallTextures, Image *floorTexture,
                    Image *ceilingTexture)
         : frame(width, height), zbuffer(new float[width]), wallTextures(wallTextures), numWallTextures(numWallTextures),
-          floorTexture(floorTexture), ceilingTexture(ceilingTexture) {
+          floorTexture(floorTexture), ceilingTexture(ceilingTexture), useFixedPoint(false), drawWalls(true),
+          drawFloorAndCeiling(true), drawSprites(true) {
 }
 
-void renderFloorAndCeilingSubPixel(Renderer &renderer, Camera &camera, float lightDistance) {
+void renderFloorAndCeilingFixedPoint(Renderer &renderer, Camera &camera, float lightDistance) {
     Image &frame = renderer.frame;
     float frameHalfHeight = float(frame.height) * 0.5f;
     float camDirX = cosf(camera.angle * DEG_TO_RAD), camDirY = sinf(camera.angle * DEG_TO_RAD);
@@ -344,12 +488,12 @@ void renderFloorAndCeilingSubPixel(Renderer &renderer, Camera &camera, float lig
 
         uint8_t lightness = uint8_t((1 - fmin(rowDistance, lightDistance) / lightDistance) * 255);
         for (int32_t x = 0, nn = frameWidth; x < nn; x++, dstFloor++, dstCeiling++) {
-            int32_t floorTx = (floorX >> FLOOR_FP_BITS) & (floorWidth - 1);
-            int32_t floorTy = (floorY >> FLOOR_FP_BITS) & (floorHeight - 1);
+            int32_t floorTx = fixedToInt(floorX, FLOOR_FP_BITS) & (floorWidth - 1);
+            int32_t floorTy = fixedToInt(floorY, FLOOR_FP_BITS) & (floorHeight - 1);
             *dstFloor = darken(srcFloor[floorTx + floorWidth * floorTy], lightness);
 
-            int32_t ceilingTx = (ceilingX >> FLOOR_FP_BITS) & (ceilingWidth - 1);
-            int32_t ceilingTy = (ceilingY >> FLOOR_FP_BITS) & (ceilingHeight - 1);
+            int32_t ceilingTx = fixedToInt(ceilingX, FLOOR_FP_BITS) & (ceilingWidth - 1);
+            int32_t ceilingTy = fixedToInt(ceilingY, FLOOR_FP_BITS) & (ceilingHeight - 1);
             *dstCeiling = darken(srcCeiling[ceilingTx + ceilingWidth * ceilingTy], lightness);
 
             floorX += floorStepX;
@@ -431,50 +575,56 @@ void Renderer::render(Camera &camera, Map &map, Sprite **sprites, int32_t numSpr
 
     for (int i = 0; i < frame.width; i++) zbuffer[i] = INFINITY;
 
-    if (floorTexture && ceilingTexture) {
-        renderFloorAndCeiling(*this, camera, lightDistance);
-        // renderFloorAndCeilingSubPixel(*this, camera, lightDistance);
+    if (drawFloorAndCeiling && floorTexture && ceilingTexture) {
+        if (!useFixedPoint)
+            renderFloorAndCeiling(*this, camera, lightDistance);
+        else
+            renderFloorAndCeilingFixedPoint(*this, camera, lightDistance);
     }
 
-    for (int32_t x = 0; x < frame.width; x++) {
-        float rayX = camera.x, rayY = camera.y;
-        float offset = ((float(x) * 2.0f / (float(frame.width) - 1.0f)) - 1.0f) * projectionPlaneWidth;
-        float rayDirX = camDirX + offset * camRightX, rayDirY = camDirY + offset * camRightY;
-        float rayDirLen = sqrtf(rayDirX * rayDirX + rayDirY * rayDirY);
-        rayDirX /= rayDirLen, rayDirY /= rayDirLen;
+    if (drawWalls) {
+        for (int32_t x = 0; x < frame.width; x++) {
+            float rayX = camera.x, rayY = camera.y;
+            float offset = ((float(x) * 2.0f / (float(frame.width) - 1.0f)) - 1.0f) * projectionPlaneWidth;
+            float rayDirX = camDirX + offset * camRightX, rayDirY = camDirY + offset * camRightY;
+            float rayDirLen = sqrtf(rayDirX * rayDirX + rayDirY * rayDirY);
+            rayDirX /= rayDirLen, rayDirY /= rayDirLen;
 
-        float distance, hitX, hitY;
-        int32_t cell = map.raycast(rayX, rayY, rayDirX, rayDirY, maxDistance, hitX, hitY, distance);
-        if (cell == 0) continue;
-        distance = distance * (rayDirX * camDirX + rayDirY * camDirY);
-        float cellHeight = frameHalfHeight / distance;
-        Image *texture = wallTextures[cell - 1];
-        int32_t tx = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
-        uint32_t lightness = uint32_t((1 - fmin(distance, lightDistance) / lightDistance) * 255);
-        frame.drawVerticalImageSlice(x, int32_t(frameHalfHeight - cellHeight),
-                                     int32_t(frameHalfHeight + cellHeight),
-                                     *texture, tx, lightness);
-        zbuffer[x] = distance;
+            float distance, hitX, hitY;
+            int32_t cell = map.raycast(rayX, rayY, rayDirX, rayDirY, maxDistance, hitX, hitY, distance);
+            if (cell == 0) continue;
+            distance = distance * (rayDirX * camDirX + rayDirY * camDirY);
+            float cellHeight = frameHalfHeight / distance;
+            Image *texture = wallTextures[cell - 1];
+            int32_t tx = int32_t((hitX + hitY) * float(texture->width)) % texture->width;
+            uint32_t lightness = uint32_t((1 - fmin(distance, lightDistance) / lightDistance) * 255);
+            frame.drawVerticalImageSlice(*texture, x, int32_t(frameHalfHeight - cellHeight),
+                                         int32_t(frameHalfHeight + cellHeight),
+                                         tx, lightness);
+            zbuffer[x] = distance;
+        }
     }
 
-    for (int i = 0; i < numSprites; i++) {
-        Sprite *sprite = sprites[i];
-        sprite->distance = distance(sprite->x, sprite->y, camera.x, camera.y);
-    }
-    qsort(sprites, numSprites, sizeof(Sprite *), &spriteCompare);
-    for (int i = 0; i < numSprites; i++) {
-        Sprite *sprite = sprites[i];
-        float viewDirX = sprite->x - camera.x, viewDirY = sprite->y - camera.y;
-        if (viewDirX * camDirX + viewDirY * camDirY < 0) continue;
-        float viewAngle = atan2f(viewDirY, viewDirX) * RAD_TO_DEG - camera.angle;
-        float distance = sprite->distance * cosf(viewAngle * DEG_TO_RAD);
-        uint8_t lightness = uint8_t((1 - fmax(0.2, fmin(distance, lightDistance) / lightDistance)) * 255);
-        float halfUnitHeight = frameHalfHeight / distance;
-        float screenHeight = halfUnitHeight * 2 * sprite->height;
-        float screenWidth = screenHeight * (float(sprite->image->width) / float(sprite->image->height));
-        float xc = (tanf(viewAngle * DEG_TO_RAD) / projectionPlaneWidth * frameHalfWidth + frameHalfWidth);
-        float x = xc - screenWidth / 2;
-        float y = frameHalfHeight + halfUnitHeight - screenHeight;
-        frame.drawImage(x, y, screenWidth, screenHeight, sprite->image, lightness, zbuffer, distance);
+    if (drawSprites) {
+        for (int i = 0; i < numSprites; i++) {
+            Sprite *sprite = sprites[i];
+            sprite->distance = distance(sprite->x, sprite->y, camera.x, camera.y);
+        }
+        qsort(sprites, numSprites, sizeof(Sprite *), &spriteCompare);
+        for (int i = 0; i < numSprites; i++) {
+            Sprite *sprite = sprites[i];
+            float viewDirX = sprite->x - camera.x, viewDirY = sprite->y - camera.y;
+            if (viewDirX * camDirX + viewDirY * camDirY < 0) continue;
+            float viewAngle = atan2f(viewDirY, viewDirX) * RAD_TO_DEG - camera.angle;
+            float distance = sprite->distance * cosf(viewAngle * DEG_TO_RAD);
+            uint8_t lightness = uint8_t((1 - fmax(0.2, fmin(distance, lightDistance) / lightDistance)) * 255);
+            float halfUnitHeight = frameHalfHeight / distance;
+            float screenHeight = halfUnitHeight * 2 * sprite->height;
+            float screenWidth = screenHeight * (float(sprite->image->width) / float(sprite->image->height));
+            float xc = (tanf(viewAngle * DEG_TO_RAD) / projectionPlaneWidth * frameHalfWidth + frameHalfWidth);
+            float x = xc - screenWidth / 2;
+            float y = frameHalfHeight + halfUnitHeight - screenHeight;
+            drawSprite(&frame, sprite->image, x, y, screenWidth, screenHeight, lightness, zbuffer, distance);
+        }
     }
 }

@@ -4,15 +4,15 @@
 #include <cstdint>
 
 namespace lilray {
-    struct Sprite;
+    struct Font;
 
     struct Image {
         int32_t width, height;
         uint32_t *pixels;
 
-        explicit Image(const char *file);
+        explicit Image(const char *imageFile);
 
-        Image(uint8_t *bytes, int32_t num_bytes);
+        Image(uint8_t *imageBytes, int32_t numBytes);
 
         Image(int32_t width, int32_t height, const uint32_t *pixels = nullptr);
 
@@ -24,16 +24,30 @@ namespace lilray {
 
         void drawVerticalLine(int32_t x, int32_t ys, int32_t ye, uint32_t color);
 
-        void drawVerticalImageSlice(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
+        void drawVerticalImageSlice(Image &texture, int32_t x, int32_t ys, int32_t ye, int32_t tx,
                                     uint8_t lightness);
 
-        void drawVerticalImageSliceAlpha(int32_t x, int32_t ys, int32_t ye, Image &texture, int32_t tx,
-                                         uint8_t lightness);
+        void drawRectangle(int32_t x, int32_t y, int32_t width, int32_t height, uint32_t color);
 
-        void drawImage(float x, float y, float scaledWidth, float scaledHeight, Image *image, uint8_t lightness,
-                       float *zbuffer, float distance);
+        void drawText(Font &font, int32_t x, int32_t y, uint32_t color, const char *fmt, ...);
 
-        void toRgba();
+        void reverseColorChannels();
+    };
+
+    struct Font {
+        uint8_t *pixels;
+        int32_t width;
+        int32_t height;
+        int32_t charWidth;
+        int32_t charHeight;
+        int32_t charsX;
+        int32_t charsY;
+
+        Font(const char *imageFile, int32_t charWidth, int32_t charHeight);
+
+        Font(uint8_t *imageBytes, int32_t numBytes, int32_t charWidth, int32_t charHeight);
+
+        void getBounds(int32_t &width, int32_t &height, const char *fmt, ...);
     };
 
     struct Map {
@@ -80,11 +94,44 @@ namespace lilray {
         int32_t numWallTextures;
         Image *floorTexture;
         Image *ceilingTexture;
+        bool useFixedPoint;
+        bool drawWalls;
+        bool drawFloorAndCeiling;
+        bool drawSprites;
 
         Renderer(int32_t width, int32_t height, Image *wallTextures[], int32_t numWallTextures,
                  Image *floorTexture = nullptr, Image *ceilingTexture = nullptr);
 
         void render(Camera &camera, Map &map, Sprite *sprites[], int32_t numSprites, float lightDistance);
+    };
+
+    struct Average {
+        double *values;
+        int32_t index;
+        int32_t windowSize;
+        int32_t writtenValues;
+
+        Average(int32_t windowSize) : windowSize(windowSize), index(0), writtenValues(0) {
+            values = new double[windowSize];
+        }
+
+        ~Average() {
+            delete values;
+        }
+
+        void addValue(double value) {
+            values[index] = value;
+            index = (index + 1) % windowSize;
+            if (writtenValues < windowSize) writtenValues++;
+        }
+
+        double getAverage() {
+            double sum = 0;
+            for (int i = 0; i < writtenValues; i++) {
+                sum += values[i];
+            }
+            return sum / writtenValues;
+        }
     };
 }
 

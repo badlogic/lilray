@@ -5,3 +5,4 @@ assets/.DS_Store
 web/assets
 web/liblilray.js
 web/liblilray.wasm
+.DS_Store
