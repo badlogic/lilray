@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
         char text[255];
         snprintf(text, 255,
-                 "Frame time: %f\n(0) Use Fixed point: %s\n(1) Draw walls: %s\n(2) Draw floor/ceiling: %s\n(3) Draw sprites: %s",
+                 "Frame time: %f\n(0) Use Fixed point:    %s\n(1) Draw walls:         %s\n(2) Draw floor/ceiling: %s\n(3) Draw sprites:       %s",
                  avgFrameTime.getAverage(),
                  renderer->useFixedPoint ? "true" : "false",
                  renderer->drawWalls ? "true" : "false",
