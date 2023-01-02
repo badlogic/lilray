@@ -22,8 +22,11 @@ using namespace lilray;
 #define FLOOR_FP_BITS 13
 
 static inline float signum(float v) { return v < 0 ? -1.0f : 1.0f; }
+
+#ifdef DJGPP
 static inline float fmin(float a, float b) { return a < b ? a : b; }
 static inline float fmax(float a, float b) { return a > b ? a : b; }
+#endif
 
 static inline uint32_t darken(uint32_t color, uint8_t lightness) {
 	uint64_t expand = (((uint64_t) color) << 32) | color;
