@@ -1,8 +1,12 @@
 .idea
 cmake-build-debug
 cmake-build-release
+build/
 assets/.DS_Store
 web/assets
 web/liblilray.js
 web/liblilray.wasm
 .DS_Store
+dos/tools/djgpp
+dos/tools/dosbox-x/dosbox-x.app
+dos/tools/gdb

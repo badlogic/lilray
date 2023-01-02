@@ -1,0 +1,8 @@
+{
+	"C_Cpp.intelliSenseEngine": "disabled",
+	"cmake.generator": "Ninja",
+	"cmake.configureOnOpen": true,
+	"editor.formatOnSave": true,
+	"editor.tabSize": 4,
+	"debug.onTaskErrors": "debugAnyway"
+}

@@ -1,0 +1,6 @@
+[
+    {
+        "name": "djgpp",
+        "toolchainFile": "${workspaceFolder}/dos/tools/toolchain-djgpp.cmake"
+    }
+]
