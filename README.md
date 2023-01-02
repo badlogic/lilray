@@ -2,6 +2,8 @@
 ![](screenshot.png)
 A basic raycasting "engine" implemented in shoddy C++ with a C wrapper so it can be exposed to other languages, including JavaScript through WASM.
 
+The repository comes with a C++ and C demo which runs on Windows, Linux, macOS, Web (WASM), and DOS (yes, really...).
+
 [Try it in your browser](https://marioslab.io/dump/lilray/)
 
 ## Usage
@@ -86,22 +88,7 @@ The resulting executables for each little demo app can then be found in the buil
 ./dos/tools/dosbox-x/dosbox-x -fastlaunch -exit -conf ./dos/dosbox-x.conf build/<executable-file.exe>
 ```
 
-You can also debug the executables running in DOSBox-x. For that to work, you need to integrate the [GDB stub](https://sourceware.org/gdb/onlinedocs/gdb/Remote-Stub.html) that is found in `dos/gdbstub.h` like this:
-
-```c
-#define GDB_IMPLEMENTATION
-#include "gdbstub.h"
-int main(void) {
-    gdb_start();
-    ... setup code ...
-    do {
-        ... main loop ...
-        gdb_checkpoint();
-    } while (mfb_wait_sync(window));
-}
-```
-
-Next, delete the `build/` folder and reconfigure the CMake build to generate debug binaries:
+You can also debug the executables running in DOSBox-x. Delete the `build/` folder and reconfigure the CMake build to generate debug binaries:
 
 ```
 cmake -DCMAKE_TOOLCHAIN_FILE=./dos/tools/toolchain-djgpp.cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
@@ -126,6 +113,6 @@ Start the downloaded GDB, load the debug info from the executable, and let it co
 
 GDB will connect and stop in `gdb_start()`. You can now set breakpoints, step, continue, inspect local variables and so on.
 
-You can of course also use VS Code to debug via a graphical user interface. Open the project root folder in VS Code, select the `djgpp` [CMake kit](https://vector-of-bool.github.io/docs/vscode-cmake-tools/kits.html), select the `Debug` [CMake variant](https://vector-of-bool.github.io/docs/vscode-cmake-tools/getting_started.html#selecting-a-variant), and the [CMake launch target](https://vector-of-bool.github.io/docs/vscode-cmake-tools/debugging.html#selecting-a-launch-target), then run the `DOS debug target` launch configuration.
+You can of course also use VS Code to debug via a graphical user interface.
 
-See the [`src/12_hello_dos.c`](src/12_hello_dos.c) demo on how to use the GDB stub for DOS debugging.
+Open the project root folder in VS Code, select the `djgpp` [CMake kit](https://vector-of-bool.github.io/docs/vscode-cmake-tools/kits.html), select the `Debug` [CMake variant](https://vector-of-bool.github.io/docs/vscode-cmake-tools/getting_started.html#selecting-a-variant), and the [CMake launch target](https://vector-of-bool.github.io/docs/vscode-cmake-tools/debugging.html#selecting-a-launch-target), then run the `DOS debug target` launch configuration.
