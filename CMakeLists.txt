@@ -23,6 +23,24 @@ FetchContent_MakeAvailable(minifb)
 
 include_directories(src)
 
+if (EMSCRIPTEN)
+    add_executable(liblilray "src/lilray.cpp" "src/lilray-c.cpp")
+    target_link_options(liblilray PRIVATE
+                "-sSTRICT=1"
+                "-sENVIRONMENT=web"
+                "-sLLD_REPORT_UNDEFINED"
+                "-sMODULARIZE=1"
+                "-sALLOW_MEMORY_GROWTH=1"
+                "-sALLOW_TABLE_GROWTH"
+                "-sMALLOC=emmalloc"
+                "-sEXPORT_ALL=1"
+                "-sEXPORTED_FUNCTIONS=[\"_malloc\",\"_free\"]"
+                "-sASYNCIFY"
+                "--no-entry"
+                "-sEXPORT_NAME=liblilray"
+        )
+endif()
+
 add_executable(lilray "src/lilray.cpp" "src/main.cpp")
 target_link_libraries(lilray LINK_PUBLIC minifb)
 
@@ -45,7 +63,7 @@ add_custom_target(web_assets
 )
 
 get_property(targets DIRECTORY "${_dir}" PROPERTY BUILDSYSTEM_TARGETS)
-list(REMOVE_ITEM targets minifb assets web_assets)
+list(REMOVE_ITEM targets minifb liblilray assets web_assets)
 foreach(target IN LISTS targets)
     target_link_libraries(${target} LINK_PUBLIC minifb)
     add_dependencies(${target} assets)
