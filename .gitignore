@@ -10,3 +10,4 @@ web/liblilray.wasm
 dos/tools/djgpp
 dos/tools/dosbox-x/dosbox-x.app
 dos/tools/gdb
+.cache
