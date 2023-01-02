@@ -209,7 +209,7 @@ void subPixelQuad() {
   };
 	// clang-format on
 	// Image sprite(8, 8, checkers);
-	Image sprite("grunt.png");
+	Image sprite("assets/grunt.png");
 	float objZ = 4, camZ = 0, camDirZ = 1;
 	int32_t fpBits = 8;
 	int32_t fpOne = 1 << fpBits;
